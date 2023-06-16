@@ -85,7 +85,8 @@ def update_major_minute(
             dfs_list.append(major_contract_m01_df)
 
     update_df = pd.concat(dfs_list, axis=0, ignore_index=True)
-    em01_major_lib.update(t_update_df=update_df)
+    round_df = update_df.round(2)
+    em01_major_lib.update(t_update_df=round_df)
 
     em01_lib.close()
     em01_major_lib.close()
@@ -154,22 +155,22 @@ def update_public_info(
             instru_pub_info_df.sort_values(by="volume", ascending=False, inplace=True)
             w_srs = pd.Series(data=w, index=instru_pub_info_df.index)
 
-            dlt_lng_df_by_contract = pivot_pos_df.loc["2", instru_sub_id].dropna(axis=0, how="all").fillna(0)
-            dlt_srt_df_by_contract = pivot_pos_df.loc["3", instru_sub_id].dropna(axis=0, how="all").fillna(0)
-            raw_lng_wgt_srs = w_srs[dlt_lng_df_by_contract.columns]
-            raw_srt_wgt_srs = w_srs[dlt_srt_df_by_contract.columns]
+            lng_df_by_contract = pivot_pos_df.loc["2", instru_sub_id].dropna(axis=0, how="all").fillna(0)
+            srt_df_by_contract = pivot_pos_df.loc["3", instru_sub_id].dropna(axis=0, how="all").fillna(0)
+            raw_lng_wgt_srs = w_srs[lng_df_by_contract.columns]
+            raw_srt_wgt_srs = w_srs[srt_df_by_contract.columns]
             lng_wgt_srs = raw_lng_wgt_srs / raw_lng_wgt_srs.sum()
             srt_wgt_srs = raw_srt_wgt_srs / raw_srt_wgt_srs.sum()
 
-            dlt_df = pd.DataFrame({
-                "lng": dlt_lng_df_by_contract @ lng_wgt_srs,
-                "srt": dlt_srt_df_by_contract @ srt_wgt_srs,
-            }).fillna(0)
-            dlt_df["trade_date"] = trade_date
-            dlt_df["instrument"] = instrument
-            dlt_df.reset_index(inplace=True)
-            dlt_df = dlt_df[["trade_date", "instrument", "member_chs", "lng", "srt"]]
-            dlt_dfs.append(dlt_df)
+            td_instru_pos_df = pd.DataFrame({
+                "lng": lng_df_by_contract @ lng_wgt_srs,
+                "srt": srt_df_by_contract @ srt_wgt_srs,
+            }).fillna(0).round(2)
+            td_instru_pos_df["trade_date"] = trade_date
+            td_instru_pos_df["instrument"] = instrument
+            td_instru_pos_df.reset_index(inplace=True)
+            td_instru_pos_df = td_instru_pos_df[["trade_date", "instrument", "member_chs", "lng", "srt"]]
+            dlt_dfs.append(td_instru_pos_df)
 
     # --- reorganize
     all_factor_df = pd.concat(dlt_dfs, axis=0, ignore_index=True)
@@ -184,6 +185,6 @@ def update_public_info(
     factor_lib.update(t_update_df=all_factor_df, t_using_index=False)
     factor_lib.close()
 
-    print("... @ {} delta positions are calculated".format(dt.datetime.now()))
     md_db.close()
+    print("... @ {} {} positions are calculated".format(dt.datetime.now(), value_type))
     return 0

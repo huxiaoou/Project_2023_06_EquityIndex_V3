@@ -10,8 +10,10 @@ This project is mainly about:
     b. fundamental factors, such as term structure and basis
     c. extra public information from exchanged
 3.  use move average technology to cancel the test_window settings
-    this is the biggest difference from
+    this is THE BIGGEST DIFFERENCE from
     E:\\Works\\2023\\Project_2023_06_EquityIndex_ML_V2
+    or you can think, in this project, test window would always be 1
+    two kinds of test returns are provided: open and close
 """
 import os
 import sys

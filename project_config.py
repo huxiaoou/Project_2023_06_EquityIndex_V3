@@ -11,7 +11,7 @@ equity_indexes = (
 mapper_index_to_futures = {k: v for k, v in equity_indexes}
 mapper_futures_to_index = {v: k for k, v in equity_indexes}
 
-test_windows = [1, 2, 3, 5, 10]
+factor_mov_ave_windows = [1, 2, 3, 5, 10]
 
 # --- factors
 factors_args = {

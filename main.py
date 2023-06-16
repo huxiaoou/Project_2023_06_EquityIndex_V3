@@ -13,15 +13,13 @@ from tests.ic_tests_summary import cal_ic_tests_summary_mp
 from tests.gp_tests import cal_gp_tests_mp
 from tests.gp_tests_summary import cal_gp_tests_summary_mp
 from tests.gp_tests_corr import cal_gp_tests_corr
-from signals.signals import cal_signals_mp, cal_simulation_mp
 
 from project_config import equity_indexes, mapper_futures_to_index
-from project_config import instruments_universe, test_windows, universe_options
+from project_config import instruments_universe, universe_options
 from project_config import factors, factors_args
 from project_config import manager_cx_windows
 from project_config import cost_rate
 from struct_lib import database_structure
-from struct_signal import signals_structure
 from project_setup import calendar_path, futures_instru_info_path
 from project_setup import major_minor_dir, major_return_dir, md_by_instru_dir
 from project_setup import futures_md_dir, futures_md_structure_path
@@ -49,7 +47,7 @@ from factors_exposure import cal_fac_exp_ts_mp
 from factors_exposure import cal_fac_exp_twc_mp
 
 if __name__ == "__main__":
-    args_parser = argparse.ArgumentParser(description="Entry point to run all")
+    args_parser = argparse.ArgumentParser(description="Entry point of this project")
     args_parser.add_argument("-w", "--switch", type=str, help="""
         use this to decide which parts to run, available options = {'preprocess', 'test_returns', 'factors_exposure'}
         """)
@@ -58,7 +56,7 @@ if __name__ == "__main__":
         use this to decide which factor, available options = {
         'amp', 'amt', 'basis', 'beta', 'cx', 'exr', 'mtm', 'pos', 'sgm', 'size', 'skew', 'smt', 'to', 'ts', 'twc'}
         """)
-    args_parser.add_argument("-m", "--mode", type=str, help="""
+    args_parser.add_argument("-m", "--mode", type=str, choices=("o", "a"), help="""
         run mode, available options = {'o', 'overwrite', 'a', 'append'}
         """)
     args_parser.add_argument("-b", "--bgn", type=str, help="""
@@ -91,7 +89,7 @@ if __name__ == "__main__":
     if switch in ["PP", "PREPROCESS"]:
         if factor == "split":
             split_spot_daily_k(equity_index_by_instrument_dir, equity_indexes)
-        elif factor == "minute":
+        elif factor == "m01":
             update_major_minute(run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
                                 instruments=instruments_universe, calendar_path=calendar_path,
                                 futures_md_structure_path=futures_md_structure_path,
@@ -114,19 +112,20 @@ if __name__ == "__main__":
                                    database_structure=database_structure
                                    )
     elif switch in ["TR", "TEST_RETURNS"]:
-        cal_test_returns_mp(
-            proc_num=proc_num,
-            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-            test_windows=test_windows,
-            instruments_universe=instruments_universe,
-            database_structure=database_structure,
-            test_returns_dir=research_test_returns_dir,
-            major_minor_dir=major_minor_dir,
-            futures_md_dir=futures_md_dir,
-            calendar_path=calendar_path,
-            futures_md_structure_path=futures_md_structure_path,
-            futures_em01_db_name=futures_em01_db_name,
-        )
+        pass
+        # cal_test_returns_mp(
+        #     proc_num=proc_num,
+        #     run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+        #     test_windows=test_windows,
+        #     instruments_universe=instruments_universe,
+        #     database_structure=database_structure,
+        #     test_returns_dir=research_test_returns_dir,
+        #     major_minor_dir=major_minor_dir,
+        #     futures_md_dir=futures_md_dir,
+        #     calendar_path=calendar_path,
+        #     futures_md_structure_path=futures_md_structure_path,
+        #     futures_em01_db_name=futures_em01_db_name,
+        # )
     elif switch in ["FE", "FACTORS_EXPOSURE"]:
         if factor == "amp":
             cal_fac_exp_amp_mp(
@@ -298,83 +297,90 @@ if __name__ == "__main__":
         else:
             print("... factor = {} is not a legal option, please check again".format(factor))
     elif switch in ["IC"]:
-        cal_ic_tests_mp(
-            proc_num=5,
-            factor_lbls=factors, test_windows=test_windows,
-            # factor_lbls=fac_sub_grp_exr, test_windows=test_windows,
-            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-            ic_tests_dir=research_ic_tests_dir,
-            factors_exposure_dir=research_factors_exposure_dir,
-            test_returns_dir=research_test_returns_dir,
-            database_structure=database_structure,
-            calendar_path=calendar_path)
+        pass
+        # cal_ic_tests_mp(
+        #     proc_num=5,
+        #     factor_lbls=factors, test_windows=test_windows,
+        #     # factor_lbls=fac_sub_grp_exr, test_windows=test_windows,
+        #     run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+        #     ic_tests_dir=research_ic_tests_dir,
+        #     factors_exposure_dir=research_factors_exposure_dir,
+        #     test_returns_dir=research_test_returns_dir,
+        #     database_structure=database_structure,
+        #     calendar_path=calendar_path)
     elif switch in ["ICSUM"]:
-        cal_ic_tests_summary_mp(
-            proc_num=proc_num,
-            test_windows=test_windows, factors=factors,
-            methods=["pearson", "spearman"], plot_top_n=6,
-            bgn_date=bgn_date, stp_date=stp_date,
-            database_structure=database_structure,
-            ic_tests_dir=research_ic_tests_dir,
-            ic_tests_summary_dir=research_ic_tests_summary_dir,
-            days_per_year=252)
+        pass
+        # cal_ic_tests_summary_mp(
+        #     proc_num=proc_num,
+        #     test_windows=test_windows, factors=factors,
+        #     methods=["pearson", "spearman"], plot_top_n=6,
+        #     bgn_date=bgn_date, stp_date=stp_date,
+        #     database_structure=database_structure,
+        #     ic_tests_dir=research_ic_tests_dir,
+        #     ic_tests_summary_dir=research_ic_tests_summary_dir,
+        #     days_per_year=252)
     elif switch in ["GP"]:
-        cal_gp_tests_mp(
-            proc_num=5,
-            factor_lbls=factors, test_windows=test_windows, universe_options=universe_options,
-            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-            gp_tests_dir=research_gp_tests_dir,
-            factors_exposure_dir=research_factors_exposure_dir,
-            test_returns_dir=research_test_returns_dir,
-            database_structure=database_structure,
-            calendar_path=calendar_path)
+        pass
+        # cal_gp_tests_mp(
+        #     proc_num=5,
+        #     factor_lbls=factors, test_windows=test_windows, universe_options=universe_options,
+        #     run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+        #     gp_tests_dir=research_gp_tests_dir,
+        #     factors_exposure_dir=research_factors_exposure_dir,
+        #     test_returns_dir=research_test_returns_dir,
+        #     database_structure=database_structure,
+        #     calendar_path=calendar_path)
     elif switch in ["GPSUM"]:
-        cal_gp_tests_summary_mp(
-            proc_num=proc_num,
-            test_windows=test_windows, universe_options=universe_options, factors=factors,
-            bgn_date=bgn_date, stp_date=stp_date,
-            database_structure=database_structure,
-            gp_tests_dir=research_gp_tests_dir,
-            gp_tests_summary_dir=research_gp_tests_summary_dir)
+        pass
+        # cal_gp_tests_summary_mp(
+        #     proc_num=proc_num,
+        #     test_windows=test_windows, universe_options=universe_options, factors=factors,
+        #     bgn_date=bgn_date, stp_date=stp_date,
+        #     database_structure=database_structure,
+        #     gp_tests_dir=research_gp_tests_dir,
+        #     gp_tests_summary_dir=research_gp_tests_summary_dir)
     elif switch in ["GPCOR"]:
-        cal_gp_tests_corr(
-            test_window=10, uid="U3", factors=[
-                "EXR042D3",
-                "CTP063T10",
-                "AMPH063T02",
-                "SKEW126",
-                "BASIS_D021",
-                "BETA_D063",
-                "CTR126T01",
-                "TS_D252",
-                "TWCV021",
-            ],
-            bgn_date=bgn_date, stp_date=stp_date,
-            database_structure=database_structure,
-            gp_tests_dir=research_gp_tests_dir,
-            gp_tests_summary_dir=research_gp_tests_summary_dir)
+        pass
+        # cal_gp_tests_corr(
+        #     test_window=10, uid="U3", factors=[
+        #         "EXR042D3",
+        #         "CTP063T10",
+        #         "AMPH063T02",
+        #         "SKEW126",
+        #         "BASIS_D021",
+        #         "BETA_D063",
+        #         "CTR126T01",
+        #         "TS_D252",
+        #         "TWCV021",
+        #     ],
+        #     bgn_date=bgn_date, stp_date=stp_date,
+        #     database_structure=database_structure,
+        #     gp_tests_dir=research_gp_tests_dir,
+        #     gp_tests_summary_dir=research_gp_tests_summary_dir)
     elif switch in ["SIG"]:
-        cal_signals_mp(
-            proc_num=5, sids=["S000", "S001", "S002", "S003", "S004", "S005"],
-            signals_structure=signals_structure,
-            universe_options=universe_options,
-            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-            database_structure=database_structure,
-            factors_exposure_dir=research_factors_exposure_dir,
-            signals_dir=research_signals_dir,
-            calendar_path=calendar_path,
-        )
+        pass
+        # cal_signals_mp(
+        #     proc_num=5, sids=["S000", "S001", "S002", "S003", "S004", "S005"],
+        #     signals_structure=signals_structure,
+        #     universe_options=universe_options,
+        #     run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+        #     database_structure=database_structure,
+        #     factors_exposure_dir=research_factors_exposure_dir,
+        #     signals_dir=research_signals_dir,
+        #     calendar_path=calendar_path,
+        # )
     elif switch in ["SIMU"]:
-        cal_simulation_mp(
-            proc_num=5, sids=["S000", "S001", "S002", "S003", "S004", "S005"], cost_rate=cost_rate,
-            signals_structure=signals_structure,
-            universe_options=universe_options,
-            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-            database_structure=database_structure,
-            signals_dir=research_signals_dir,
-            test_returns_dir=research_test_returns_dir,
-            simulations_dir=research_simulations_dir,
-            calendar_path=calendar_path,
-        )
+        pass
+        # cal_simulation_mp(
+        #     proc_num=5, sids=["S000", "S001", "S002", "S003", "S004", "S005"], cost_rate=cost_rate,
+        #     signals_structure=signals_structure,
+        #     universe_options=universe_options,
+        #     run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+        #     database_structure=database_structure,
+        #     signals_dir=research_signals_dir,
+        #     test_returns_dir=research_test_returns_dir,
+        #     simulations_dir=research_simulations_dir,
+        #     calendar_path=calendar_path,
+        # )
     else:
         print("... switch = {} is not a legal option, please check again".format(switch))
