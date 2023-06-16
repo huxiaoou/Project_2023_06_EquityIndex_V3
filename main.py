@@ -1,10 +1,3 @@
-"""
-0.  Entry point of this project
-1.  Suggested bgn_date for overwrite mode:
-    {
-        "update_major_minute": "20150416"
-    }
-"""
 import argparse
 from preprocess.preprocess import split_spot_daily_k, update_major_minute, update_public_info
 from test_returns.test_returns import cal_test_returns_mp
@@ -16,7 +9,7 @@ from tests.gp_tests_corr import cal_gp_tests_corr
 
 from project_config import equity_indexes, mapper_futures_to_index
 from project_config import instruments_universe, universe_options
-from project_config import factors, factors_args
+from project_config import factors, factors_args, test_return_types
 from project_config import manager_cx_windows
 from project_config import cost_rate
 from struct_lib import database_structure
@@ -64,7 +57,7 @@ if __name__ == "__main__":
         {   
             "preprocess/m01": "20150416",
             "preprocess/pub": "20150416",
-            "test_returns": "20150701",
+            "test_returns": "20150416",
             "factor_exposures": "20160101", 
             "tests": "20160601", 
             "tests_summary": "20160601", 
@@ -82,7 +75,7 @@ if __name__ == "__main__":
     args = args_parser.parse_args()
     switch = args.switch.upper()
     factor = args.factor.lower()
-    run_mode = args.mode.upper()
+    run_mode = args.mode.upper() if args.mode else args.mode
     bgn_date, stp_date = args.bgn, args.stp
     proc_num = args.process
 
@@ -112,20 +105,19 @@ if __name__ == "__main__":
                                    database_structure=database_structure
                                    )
     elif switch in ["TR", "TEST_RETURNS"]:
-        pass
-        # cal_test_returns_mp(
-        #     proc_num=proc_num,
-        #     run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-        #     test_windows=test_windows,
-        #     instruments_universe=instruments_universe,
-        #     database_structure=database_structure,
-        #     test_returns_dir=research_test_returns_dir,
-        #     major_minor_dir=major_minor_dir,
-        #     futures_md_dir=futures_md_dir,
-        #     calendar_path=calendar_path,
-        #     futures_md_structure_path=futures_md_structure_path,
-        #     futures_em01_db_name=futures_em01_db_name,
-        # )
+        cal_test_returns_mp(
+            proc_num=proc_num,
+            test_return_types=test_return_types,
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            instruments_universe=instruments_universe,
+            database_structure=database_structure,
+            test_returns_dir=research_test_returns_dir,
+            major_minor_dir=major_minor_dir,
+            futures_md_dir=futures_md_dir,
+            calendar_path=calendar_path,
+            futures_md_structure_path=futures_md_structure_path,
+            futures_em01_db_name=futures_em01_db_name,
+        )
     elif switch in ["FE", "FACTORS_EXPOSURE"]:
         if factor == "amp":
             cal_fac_exp_amp_mp(

@@ -10,20 +10,28 @@ from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriterByDate
 
 
-def lookup_av_ratio(db: CManagerLibReader, date: str, contract: str):
+def lookup_av_ratio(db: CManagerLibReader, date: str, contract: str, ret_type: str):
+    _s, _d = (0, 1) if ret_type == "o" else (-1, -1)
     m01_df = db.read_by_date(
         t_trade_date=date,
         t_value_columns=["loc_id", "amount", "volume"]
     ).set_index("loc_id")
     try:
-        return m01_df.at[contract, "amount"].iloc[0] / m01_df.at[contract, "volume"].iloc[0]
+        i = 0
+        while (v := m01_df.at[contract, "volume"].iloc[_s + _d * i]) == 0:
+            i += 1
+        if i > 0:
+            print("... 0 volume found for {} at {} with ret_type = {}, i = {:>3d}".format(contract, date, ret_type, i))
+        a = m01_df.at[contract, "amount"].iloc[_s + _d * i]
+        return a / v
     except KeyError:
         print("... Warning! KeyError when lookup av ratio at {} for {}".format(date, contract))
         return np.nan
 
 
 def cal_test_returns_for_test_window(
-        run_mode: str, bgn_date: str, stp_date: str | None, test_window: int,
+        test_return_type: str,
+        run_mode: str, bgn_date: str, stp_date: str | None,
         instruments_universe: list[str],
         database_structure: dict[str, CLib1Tab1],
         test_returns_dir: str,
@@ -34,9 +42,26 @@ def cal_test_returns_for_test_window(
         futures_em01_db_name: str,
 
 ):
+    """
+
+    :param test_return_type: must be in {"o", "c"}
+    :param run_mode:
+    :param bgn_date:
+    :param stp_date:
+    :param instruments_universe:
+    :param database_structure:
+    :param test_returns_dir:
+    :param major_minor_dir:
+    :param futures_md_dir:
+    :param calendar_path:
+    :param futures_md_structure_path:
+    :param futures_em01_db_name:
+    :return:
+    """
     calendar = CCalendar(calendar_path)
     if stp_date is None:
         stp_date = (dt.datetime.strptime(bgn_date, "%Y%m%d") + dt.timedelta(days=1)).strftime("%Y%m%d")
+    _test_window = 1
 
     # --- init major contracts
     major_minor_manager = {}
@@ -54,55 +79,52 @@ def cal_test_returns_for_test_window(
     m01_db.set_default(m01_table.m_table_name)
 
     # --- init lib writer
-    test_return_lib_id = "test_return_{:03d}".format(test_window)
+    test_return_lib_id = "test_return_{}".format(test_return_type)
     test_return_lib_struct = database_structure[test_return_lib_id]
     test_return_lib = CManagerLibWriterByDate(t_db_save_dir=test_returns_dir, t_db_name=test_return_lib_struct.m_lib_name)
     test_return_lib.initialize_table(t_table=test_return_lib_struct.m_tab, t_remove_existence=run_mode in ["O", "OVERWRITE"])
 
-    test_return_data = {instrument: [] for instrument in instruments_universe}
-    iter_dates = calendar.get_iter_list(bgn_date, stp_date, True)
-    base_iter_dates = [calendar.get_next_date(iter_dates[0], i - test_window) for i in range(test_window)]
-    for test_end_date in base_iter_dates + iter_dates:
+    # --- main loop
+    test_return_data = []
+    iter_end_dates = calendar.get_iter_list(bgn_date, stp_date, True)
+    iter_bgn_dates = calendar.get_iter_list(
+        calendar.get_next_date(iter_end_dates[0], -_test_window),
+        calendar.get_next_date(iter_end_dates[-1], -_test_window + 1),
+        True
+    )
+    for test_bgn_date, test_end_date in zip(iter_bgn_dates, iter_end_dates):
         for instrument in instruments_universe:
             instru_major_contract = major_minor_manager[instrument].at[test_end_date, "n_contract"]  # format like = "IC2305.CFE"
-            test_end_av_ratio = lookup_av_ratio(m01_db, test_end_date, instru_major_contract)
-            test_return_data[instrument].append({
+            test_bgn_av_ratio = lookup_av_ratio(m01_db, test_bgn_date, instru_major_contract, test_return_type)
+            test_end_av_ratio = lookup_av_ratio(m01_db, test_end_date, instru_major_contract, test_return_type)
+            test_return_data.append({
                 "trade_date": test_end_date,
-                "av_ratio": test_end_av_ratio,
+                "instrument": instrument,
+                "test_return": test_end_av_ratio / test_bgn_av_ratio - 1,
             })
         if run_mode in ["A", "APPEND"]:
             test_return_lib.delete_by_date(t_date=test_end_date)
+    test_return_df = pd.DataFrame(test_return_data).sort_values(by=["trade_date", "instrument"])
 
-    selected_dfs = []
-    for instrument, instrument_data in test_return_data.items():
-        instru_update_df = pd.DataFrame(instrument_data).sort_values(by="trade_date", ascending=True)
-        instru_update_df["instrument"] = instrument
-        instru_update_df["test_return"] = instru_update_df["av_ratio"] / instru_update_df["av_ratio"].shift(test_window) - 1
-        filter_dates_since_bgn_date = instru_update_df["trade_date"] >= bgn_date
-        instru_update_df_selected = instru_update_df.loc[filter_dates_since_bgn_date, ["trade_date", "instrument", "test_return"]]
-        selected_dfs.append(instru_update_df_selected)
-
-    update_df = pd.concat(selected_dfs, axis=0, ignore_index=True)
-    update_df.sort_values(by=["trade_date", "instrument"], ascending=True, inplace=True)
-    test_return_lib.update(t_update_df=update_df)
+    test_return_lib.update(t_update_df=test_return_df)
     test_return_lib.close()
     m01_db.close()
-
-    print("... @", dt.datetime.now(), run_mode, bgn_date, stp_date, "TW={:02d}".format(test_window), "calculated")
+    print("... @", dt.datetime.now(), run_mode, bgn_date, stp_date, test_return_type, "calculated")
     return 0
 
 
 def cal_test_returns_mp(
         proc_num: int,
-        run_mode: str, bgn_date: str, stp_date: str | None, test_windows: list[int],
+        test_return_types: tuple[str],
+        run_mode: str, bgn_date: str, stp_date: str | None,
         **kwargs
 ):
     t0 = dt.datetime.now()
     pool = mp.Pool(processes=proc_num)
-    for test_window in test_windows:
+    for test_return_type in test_return_types:
         pool.apply_async(
             cal_test_returns_for_test_window,
-            args=(run_mode, bgn_date, stp_date, test_window),
+            args=(test_return_type, run_mode, bgn_date, stp_date),
             kwds=kwargs
         )
     pool.close()
