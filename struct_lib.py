@@ -1,6 +1,6 @@
 import itertools as ittl
 from skyrim.falkreath import CLib1Tab1, CTable
-from project_config import factors
+from project_config import factors, factor_mov_ave_wins
 from project_config import universe_options
 
 database_structure: dict[str, CLib1Tab1] = {}
@@ -11,7 +11,7 @@ database_structure.update({
     z: CLib1Tab1(
         t_lib_name=z + ".db",
         t_tab=CTable({
-            "table_name": z,
+            "table_name": "TR",
             "primary_keys": {"trade_date": "TEXT", "instrument": "TEXT"},
             "value_columns": {"value": "REAL"},
         })
@@ -22,44 +22,55 @@ database_structure.update({
     z: CLib1Tab1(
         t_lib_name=z + ".db",
         t_tab=CTable({
-            "table_name": z,
+            "table_name": "FE",
             "primary_keys": {"trade_date": "TEXT", "instrument": "TEXT"},
             "value_columns": {"value": "REAL"},
         })
     ) for z in factors
 })
 
-# # --- ic tests by factors
-# database_structure.update({
-#     "ic-{}-TW{:03d}".format(z, tw): CLib1Tab1(
-#         t_lib_name="ic-{}-TW{:03d}.db".format(z, tw),
-#         t_tab=CTable({
-#             "table_name": z,
-#             "primary_keys": {"trade_date": "TEXT"},
-#             "value_columns": {"pearson": "REAL", "spearman": "REAL",
-#                               "CH": "REAL", "CF": "REAL", "FH": "REAL"},
-#         })
-#     ) for z, tw in ittl.product(factors, test_windows)
-# })
-#
-# # --- gp tests by factors
-# database_structure.update({
-#     "gp-{}-TW{:03d}-{}".format(z, tw, u): CLib1Tab1(
-#         t_lib_name="gp-{}-TW{:03d}-{}.db".format(z, tw, u),
-#         t_tab=CTable({
-#             "table_name": z,
-#             "primary_keys": {"trade_date": "TEXT"},
-#             "value_columns": {"RL": "REAL", "RS": "REAL", "RH": "REAL"},
-#         })
-#     ) for z, tw, u in ittl.product(factors, test_windows, universe_options)
-# })
+# --- factor exposures moving average
+database_structure.update({
+    z: CLib1Tab1(
+        t_lib_name=z + ".db",
+        t_tab=CTable({
+            "table_name": "FEMA",
+            "primary_keys": {"trade_date": "TEXT", "instrument": "TEXT"},
+            "value_columns": {"value": "REAL"},
+        })
+    ) for z in ["{}-M{:03d}".format(f, w) for f, w in ittl.product(factors, factor_mov_ave_wins)]
+})
+
+# --- ic tests by factors
+database_structure.update({
+    z: CLib1Tab1(
+        t_lib_name=z + ".db",
+        t_tab=CTable({
+            "table_name": "IC",
+            "primary_keys": {"trade_date": "TEXT"},
+            "value_columns": {"pearson": "REAL", "spearman": "REAL"},
+        })
+    ) for z in ["ic-{}-M{:03d}".format(f, w) for f, w in ittl.product(factors, factor_mov_ave_wins)]
+})
+
+# --- gp tests by factors
+database_structure.update({
+    z: CLib1Tab1(
+        t_lib_name=z + ".db",
+        t_tab=CTable({
+            "table_name": "GP",
+            "primary_keys": {"trade_date": "TEXT"},
+            "value_columns": {"RL": "REAL", "RS": "REAL", "RH": "REAL"},
+        })
+    ) for z in ["gp-{}-M{:03d}".format(f, w) for f, w in ittl.product(factors, factor_mov_ave_wins)]
+})
 
 # --- signals
 database_structure.update({
     z: CLib1Tab1(
         t_lib_name=z + ".db",
         t_tab=CTable({
-            "table_name": z,
+            "table_name": "SIG",
             "primary_keys": {"trade_date": "TEXT", "instrument": "TEXT"},
             "value_columns": {"value": "REAL"},
         })
