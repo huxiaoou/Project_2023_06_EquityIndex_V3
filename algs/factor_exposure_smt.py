@@ -17,9 +17,9 @@ def cal_smart(t_sub_df: pd.DataFrame, t_sort_var: str, t_lbd: float):
     smart_df = _sorted_df.head(n)
     if (amt_sum := smart_df["amount"].sum()) > 0:
         w = smart_df["amount"] / amt_sum
-        smart_p = -smart_df["vwap"] @ w / tot_vwap + 1
-        smart_r = -smart_df["m01_return_cls"] @ w + tot_ret
-        return smart_p, smart_r
+        smart_p = smart_df["vwap"] @ w / tot_vwap - 1
+        smart_r = smart_df["m01_return_cls"] @ w - tot_ret
+        return -smart_p, -smart_r
     else:
         print("... Warning! Sum of volume of smart df is ZERO")
         return 0, 0
@@ -42,6 +42,13 @@ def fac_exp_alg_smt(
 
     # --- load calendar
     calendar = CCalendar(calendar_path)
+    iter_end_dates = calendar.get_iter_list(bgn_date, stp_date, True)
+    base_date = calendar.get_next_date(iter_end_dates[0], -smt_window + 1)
+    iter_bgn_dates = calendar.get_iter_list(
+        base_date,
+        calendar.get_next_date(iter_end_dates[-1], -smt_window + 2),
+        True
+    )
 
     # --- load instru info table
     instru_info_table = CInstrumentInfoTable(t_path=futures_instru_info_path, t_index_label="windCode", t_type="CSV")
@@ -53,10 +60,6 @@ def fac_exp_alg_smt(
         t_db_save_dir=intermediary_dir
     )
     em01_major_lib.set_default(t_default_table_name=em01_major_lib_structure.m_tab.m_table_name)
-
-    # ---
-    iter_dates = calendar.get_iter_list(bgn_date, stp_date, True)
-    base_date = calendar.get_next_date(iter_dates[0], -smt_window + 1)
 
     # --- init major contracts
     all_factor_p_dfs, all_factor_r_dfs = [], []
@@ -76,8 +79,7 @@ def fac_exp_alg_smt(
             lambda z: np.abs(z["m01_return_cls"]) / np.log(z["volume"]) * 1e4 if z["volume"] > 1 else 0, axis=1)
 
         r_p_data, r_r_data = {}, {}
-        for iter_end_date in iter_dates:
-            iter_bgn_date = calendar.get_next_date(iter_end_date, -smt_window + 1)
+        for iter_bgn_date, iter_end_date in zip(iter_bgn_dates, iter_end_dates):
             filter_dates = (em01_df["trade_date"] >= iter_bgn_date) & (em01_df["trade_date"] <= iter_end_date)
             sub_df = em01_df.loc[filter_dates]
             r_p_data[iter_end_date], r_r_data[iter_end_date] = cal_smart(

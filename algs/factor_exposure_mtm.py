@@ -26,8 +26,8 @@ def fac_exp_alg_mtm(
         if tag_adj:
             major_return_df["volatility"] = major_return_df["major_return"].rolling(mtm_window).std()
             major_return_df[factor_lbl] = major_return_df[factor_lbl] / major_return_df["volatility"] * (252 ** 0.5)
-        fiter_dates = (major_return_df.index >= bgn_date) & (major_return_df.index < stp_date)
-        factor_df = major_return_df.loc[fiter_dates, [factor_lbl]].copy()
+        filter_dates = (major_return_df.index >= bgn_date) & (major_return_df.index < stp_date)
+        factor_df = major_return_df.loc[filter_dates, [factor_lbl]].copy()
         factor_df["instrument"] = instrument
         all_factor_dfs.append(factor_df[["instrument", factor_lbl]])
 

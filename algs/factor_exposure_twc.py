@@ -17,9 +17,9 @@ def find_time_weighted_center(t_df: pd.DataFrame, t_ret: str):
     neg_wgt = neg_grp.abs() / neg_grp.abs().sum()
     twcu = pos_grp.index @ pos_wgt
     twcd = neg_grp.index @ neg_wgt
-    twct = twcd - twcu
-    twcv = -np.abs(twct)
-    return twcu, twcd, twct, twcv
+    twct = twcu - twcd
+    twcv = np.abs(twct)
+    return twcu, twcd, -twct, -twcv
 
 
 def fac_exp_alg_twc(

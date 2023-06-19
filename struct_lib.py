@@ -1,7 +1,6 @@
 import itertools as ittl
 from skyrim.falkreath import CLib1Tab1, CTable
 from project_config import factors, factor_mov_ave_wins
-from project_config import universe_options
 
 database_structure: dict[str, CLib1Tab1] = {}
 

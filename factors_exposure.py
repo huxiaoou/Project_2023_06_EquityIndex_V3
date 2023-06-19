@@ -116,7 +116,7 @@ def cal_fac_exp_beta_mp(proc_num: int,
     pool = mp.Pool(processes=proc_num)
     for p_window in beta_windows:
         pool.apply_async(fac_exp_alg_beta,
-                         args=(run_mode, bgn_date, stp_date, p_window, max(beta_windows),
+                         args=(run_mode, bgn_date, stp_date, p_window,
                                instruments_universe,
                                calendar_path,
                                database_structure,
@@ -217,7 +217,7 @@ def cal_fac_exp_mtm_mp(proc_num: int,
 
 def cal_fac_exp_pos_mp(proc_num: int,
                        run_mode: str, bgn_date: str, stp_date: str | None,
-                       pos_windows: list[int], top_players_qty: list[int],
+                       top_players_qty: list[int],
                        instruments_universe: list[str],
                        database_structure: dict,
                        factors_exposure_dir: str,
@@ -226,10 +226,10 @@ def cal_fac_exp_pos_mp(proc_num: int,
                        calendar_path: str):
     t0 = dt.datetime.now()
     pool = mp.Pool(processes=proc_num)
-    for p_window, top_player_qty in ittl.product(pos_windows, top_players_qty):
+    for top_player_qty in top_players_qty:
         pool.apply_async(fac_exp_alg_pos,
                          args=(run_mode, bgn_date, stp_date,
-                               p_window, top_player_qty,
+                               top_player_qty,
                                instruments_universe,
                                database_structure,
                                factors_exposure_dir,

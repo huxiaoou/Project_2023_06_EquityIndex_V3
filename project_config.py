@@ -28,7 +28,6 @@ factors_args = {
     "cvr_windows": [21, 63, 126, 252],
     "exr_windows": [10, 21, 42, 63],
     "mtm_windows": [5, 10, 21, 63, 126, 252],
-    "pos_windows": [1, 2, 3, 5],  # must be a subset of test windows
     "sgm_windows": [21, 63, 126, 252],
     "size_windows": [21, 63, 126, 252],
     "skew_windows": [21, 63, 126, 252],
@@ -54,7 +53,6 @@ cvp_windows = factors_args["cvp_windows"]
 cvr_windows = factors_args["cvr_windows"]
 exr_windows = factors_args["exr_windows"]
 mtm_windows = factors_args["mtm_windows"]
-pos_windows = factors_args["pos_windows"]
 sgm_windows = factors_args["sgm_windows"]
 size_windows = factors_args["size_windows"]
 skew_windows = factors_args["skew_windows"]
@@ -92,8 +90,8 @@ fac_sub_grp_exr = ["EXR{:03d}".format(_) for _ in exr_windows] \
                   + ["DXR{:03d}D{:d}".format(_, d) for _, d in ittl.product(exr_windows, drifts)] \
                   + ["EXR{:03d}D{:d}".format(_, d) for _, d in ittl.product(exr_windows, drifts)]
 fac_sub_grp_mtm = ["MTM{:03d}".format(_) for _ in mtm_windows] + ["MTM{:03d}ADJ".format(_) for _ in mtm_windows]
-fac_sub_grp_pos = ["POSH{}{:03d}Q{:02d}".format(d, _, t) for d, _, t in ittl.product(["L", "S"], pos_windows, top_players_qty)] + \
-                  ["POSD{}{:03d}Q{:02d}".format(d, _, t) for d, _, t in ittl.product(["L", "S"], pos_windows, top_players_qty)]
+fac_sub_grp_pos = ["POSH{}Q{:02d}".format(d, t) for d, t in ittl.product(["L", "S"], top_players_qty)] + \
+                  ["POSD{}Q{:02d}".format(d, t) for d, t in ittl.product(["L", "S"], top_players_qty)]
 fac_sub_grp_sgm = ["SGM{:03d}".format(_) for _ in sgm_windows]
 fac_sub_grp_size = ["SIZE{:03d}".format(_) for _ in size_windows]
 fac_sub_grp_skew = ["SKEW{:03d}".format(_) for _ in skew_windows]
@@ -126,4 +124,24 @@ universe_options = {
 cost_rate = 5e-4
 
 if __name__ == "__main__":
-    print("Number of factors = {}".format(len(factors)))
+    print("Number of fac_sub_grp_amp   = {:>3d}".format(len(fac_sub_grp_amp)))
+    print("Number of fac_sub_grp_amt   = {:>3d}".format(len(fac_sub_grp_amt)))
+    print("Number of fac_sub_grp_basis = {:>3d}".format(len(fac_sub_grp_basis)))
+    print("Number of fac_sub_grp_beta  = {:>3d}".format(len(fac_sub_grp_beta)))
+    print("Number of fac_sub_grp_csp   = {:>3d}".format(len(fac_sub_grp_csp)))
+    print("Number of fac_sub_grp_csr   = {:>3d}".format(len(fac_sub_grp_csr)))
+    print("Number of fac_sub_grp_ctp   = {:>3d}".format(len(fac_sub_grp_ctp)))
+    print("Number of fac_sub_grp_ctr   = {:>3d}".format(len(fac_sub_grp_ctr)))
+    print("Number of fac_sub_grp_cvp   = {:>3d}".format(len(fac_sub_grp_cvp)))
+    print("Number of fac_sub_grp_cvr   = {:>3d}".format(len(fac_sub_grp_cvr)))
+    print("Number of fac_sub_grp_exr   = {:>3d}".format(len(fac_sub_grp_exr)))
+    print("Number of fac_sub_grp_mtm   = {:>3d}".format(len(fac_sub_grp_mtm)))
+    print("Number of fac_sub_grp_sgm   = {:>3d}".format(len(fac_sub_grp_sgm)))
+    print("Number of fac_sub_grp_size  = {:>3d}".format(len(fac_sub_grp_size)))
+    print("Number of fac_sub_grp_skew  = {:>3d}".format(len(fac_sub_grp_skew)))
+    print("Number of fac_sub_grp_smt   = {:>3d}".format(len(fac_sub_grp_smt)))
+    print("Number of fac_sub_grp_to    = {:>3d}".format(len(fac_sub_grp_to)))
+    print("Number of fac_sub_grp_ts    = {:>3d}".format(len(fac_sub_grp_ts)))
+    print("Number of fac_sub_grp_twc   = {:>3d}".format(len(fac_sub_grp_twc)))
+    print("Number of fac_sub_grp_pos   = {:>3d}".format(len(fac_sub_grp_pos)))
+    print("Number of all factors       = {:>3d}".format(len(factors)))

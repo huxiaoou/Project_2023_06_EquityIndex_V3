@@ -24,8 +24,8 @@ def fac_exp_alg_amt(
         major_return_path = os.path.join(major_return_dir, major_return_file)
         major_return_df = pd.read_csv(major_return_path, dtype={"trade_date": str}).set_index("trade_date")
         major_return_df[factor_lbl] = major_return_df["amount"].rolling(window=amt_window).mean() / money_scale
-        fiter_dates = (major_return_df.index >= bgn_date) & (major_return_df.index < stp_date)
-        factor_df = major_return_df.loc[fiter_dates, [factor_lbl]].copy()
+        filter_dates = (major_return_df.index >= bgn_date) & (major_return_df.index < stp_date)
+        factor_df = major_return_df.loc[filter_dates, [factor_lbl]].copy()
         factor_df["instrument"] = instrument
         all_factor_dfs.append(factor_df[["instrument", factor_lbl]])
 

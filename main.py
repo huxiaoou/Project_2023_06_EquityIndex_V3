@@ -58,7 +58,7 @@ if __name__ == "__main__":
             "preprocess/m01": "20150416",
             "preprocess/pub": "20150416",
             "test_returns": "20150416",
-            "factor_exposures": "20160101", 
+            "factor_exposures": "20150416", 
             "tests": "20160601", 
             "tests_summary": "20160601", 
             "signals": "20160601", 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         """)
     args_parser.add_argument("-s", "--stp", type=str, help="""
         stop date, not included, usually it would be the day after the last trade date, such as
-        "20230612" if last trade date is "20230609"  
+        "20230619" if last trade date is "20230616"  
         """)
     args_parser.add_argument("-p", "--process", type=int, default=5, help="""
         number of process to be called when calculating, default = 5
@@ -201,7 +201,7 @@ if __name__ == "__main__":
             cal_fac_exp_pos_mp(
                 proc_num=proc_num,
                 run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-                pos_windows=factors_args["pos_windows"], top_players_qty=factors_args["top_players_qty"],
+                top_players_qty=factors_args["top_players_qty"],
                 instruments_universe=instruments_universe,
                 database_structure=database_structure,
                 factors_exposure_dir=research_factors_exposure_dir,

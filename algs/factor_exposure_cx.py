@@ -39,19 +39,15 @@ def fac_exp_alg_cx(
     if stp_date is None:
         stp_date = (dt.datetime.strptime(bgn_date, "%Y%m%d") + dt.timedelta(days=1)).strftime("%Y%m%d")
     top_size = int(cx_window * top_prop) + 1
-    if cx.upper() == "CSP":
-        x, y = "sigma", "instru_idx"
-    elif cx.upper() == "CSR":
-        x, y = "sigma", "major_return"
-    elif cx.upper() == "CTP":
-        x, y = "turnover", "instru_idx"
-    elif cx.upper() == "CTR":
-        x, y = "turnover", "major_return"
-    elif cx.upper() == "CVP":
-        x, y = "volume", "instru_idx"
-    elif cx.upper() == "CVR":
-        x, y = "volume", "major_return"
-    else:
+    x, y = {
+        "CSP": ("sigma", "instru_idx"),
+        "CSR": ("sigma", "major_return"),
+        "CTP": ("turnover", "instru_idx"),
+        "CTR": ("turnover", "major_return"),
+        "CVP": ("volume", "instru_idx"),
+        "CVR": ("volume", "major_return"),
+    }.get(cx.upper(), (None, None))
+    if (x, y) == (None, None):
         print("... Error! when calculating CX")
         print("... cx = ", cx, "is not a legal input, please check again")
         print("... this function will terminate at once")
