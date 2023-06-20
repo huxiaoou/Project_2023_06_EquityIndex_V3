@@ -1,7 +1,7 @@
 import argparse
 from project_config import equity_indexes, mapper_futures_to_index
 from project_config import instruments_universe
-from project_config import factors, factors_args, test_return_types, factor_mov_ave_wins
+from project_config import factors, factors_ma, factors_args, test_return_types, factor_mov_ave_wins
 from project_config import manager_cx_windows
 from project_config import cost_rate
 from struct_lib import database_structure
@@ -62,7 +62,9 @@ if __name__ == "__main__":
             "preprocess/pub": "20150416",
             "test_returns": "20150416",
             "factor_exposures": "20150416", 
+            
             "factor_exposures_moving_average": "20160525", 
+            
             "tests": "20160601", 
             "tests_summary": "20160601", 
             "signals": "20160601", 
@@ -312,17 +314,15 @@ if __name__ == "__main__":
             factors_exposure_dir=research_factors_exposure_dir,
             calendar_path=calendar_path)
     elif switch in ["IC"]:
-        pass
-        # cal_ic_tests_mp(
-        #     proc_num=5,
-        #     factor_lbls=factors, test_windows=test_windows,
-        #     # factor_lbls=fac_sub_grp_exr, test_windows=test_windows,
-        #     run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-        #     ic_tests_dir=research_ic_tests_dir,
-        #     factors_exposure_dir=research_factors_exposure_dir,
-        #     test_returns_dir=research_test_returns_dir,
-        #     database_structure=database_structure,
-        #     calendar_path=calendar_path)
+        cal_ic_tests_mp(
+            proc_num=5,
+            factors_ma=factors_ma,
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            ic_tests_dir=research_ic_tests_dir,
+            factors_exposure_dir=research_factors_exposure_dir,
+            test_returns_dir=research_test_returns_dir,
+            database_structure=database_structure,
+            calendar_path=calendar_path)
     elif switch in ["ICSUM"]:
         pass
         # cal_ic_tests_summary_mp(
