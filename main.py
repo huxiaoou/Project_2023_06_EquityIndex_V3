@@ -1,15 +1,7 @@
 import argparse
-from preprocess.preprocess import split_spot_daily_k, update_major_minute, update_public_info
-from test_returns.test_returns import cal_test_returns_mp
-from tests.ic_tests import cal_ic_tests_mp
-from tests.ic_tests_summary import cal_ic_tests_summary_mp
-from tests.gp_tests import cal_gp_tests_mp
-from tests.gp_tests_summary import cal_gp_tests_summary_mp
-from tests.gp_tests_corr import cal_gp_tests_corr
-
 from project_config import equity_indexes, mapper_futures_to_index
-from project_config import instruments_universe, universe_options
-from project_config import factors, factors_args, test_return_types
+from project_config import instruments_universe
+from project_config import factors, factors_args, test_return_types, factor_mov_ave_wins
 from project_config import manager_cx_windows
 from project_config import cost_rate
 from struct_lib import database_structure
@@ -23,6 +15,9 @@ from project_setup import research_test_returns_dir, research_factors_exposure_d
 from project_setup import research_intermediary_dir, research_signals_dir, research_simulations_dir
 from project_setup import research_ic_tests_dir, research_ic_tests_summary_dir
 from project_setup import research_gp_tests_dir, research_gp_tests_summary_dir
+
+from preprocess.preprocess import split_spot_daily_k, update_major_minute, update_public_info
+from test_returns.test_returns import cal_test_returns_mp
 from factors_exposure import cal_fac_exp_amp_mp
 from factors_exposure import cal_fac_exp_amt_mp
 from factors_exposure import cal_fac_exp_basis_mp
@@ -38,6 +33,12 @@ from factors_exposure import cal_fac_exp_smt_mp
 from factors_exposure import cal_fac_exp_to_mp
 from factors_exposure import cal_fac_exp_ts_mp
 from factors_exposure import cal_fac_exp_twc_mp
+from algs.factor_exposure_MA import cal_fac_exp_MA_mp
+from tests.ic_tests import cal_ic_tests_mp
+from tests.ic_tests_summary import cal_ic_tests_summary_mp
+from tests.gp_tests import cal_gp_tests_mp
+from tests.gp_tests_summary import cal_gp_tests_summary_mp
+from tests.gp_tests_corr import cal_gp_tests_corr
 
 if __name__ == "__main__":
     args_parser = argparse.ArgumentParser(description="Entry point of this project")
@@ -59,6 +60,7 @@ if __name__ == "__main__":
             "preprocess/pub": "20150416",
             "test_returns": "20150416",
             "factor_exposures": "20150416", 
+            "factor_exposures_moving_average": "20160525", 
             "tests": "20160601", 
             "tests_summary": "20160601", 
             "signals": "20160601", 
@@ -288,6 +290,16 @@ if __name__ == "__main__":
             )
         else:
             print("... factor = {} is not a legal option, please check again".format(factor))
+    elif switch in ["FEMA", "FACTORS_EXPOSURE_MOVING_AVERAGE"]:
+        cal_fac_exp_MA_mp(
+            proc_num=proc_num,
+            factor_lbls=factors, mov_ave_wins=factor_mov_ave_wins,
+            # factor_lbls=["POSHLQ05"], mov_ave_wins=factor_mov_ave_wins,
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            universe=instruments_universe,
+            database_structure=database_structure,
+            factors_exposure_dir=research_factors_exposure_dir,
+            calendar_path=calendar_path)
     elif switch in ["IC"]:
         pass
         # cal_ic_tests_mp(

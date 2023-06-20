@@ -1,11 +1,25 @@
 import itertools as ittl
 import datetime as dt
+import numpy as np
 import pandas as pd
 import multiprocessing as mp
 from skyrim.whiterun import CCalendar
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriter
+
+
+class CSignalBase(object):
+    def __init__(self, t_universe: list[str]):
+        self.m_universe = t_universe
+        self.m_u_size = len(self.m_universe)
+        k = int(self.m_u_size / 2)
+        wh = np.array([1] * k + [0] * (self.m_u_size - 2 * k) + [-1] * k)
+        self.m_wh = wh / np.abs(wh).sum()
+
+    def convert(self, xs: pd.Series, d: dict):
+        d[xs.name] = pd.Series(data=self.m_wh, index=xs.sort_values(ascending=False).index)
+        return 0
 
 
 def moving_average(df: pd.DataFrame, row: str, col: str, val: str, mov_ave_win: int):
@@ -18,6 +32,7 @@ def moving_average(df: pd.DataFrame, row: str, col: str, val: str, mov_ave_win: 
 def fac_exp_MA(
         factor: str, mov_ave_win: int,
         run_mode: str, bgn_date: str, stp_date: str | None,
+        universe: list[str],
         database_structure: dict[str, CLib1Tab1],
         factors_exposure_dir: str,
         calendar_path: str,
@@ -25,6 +40,8 @@ def fac_exp_MA(
     factor_ma = "{}-M{:03d}".format(factor, mov_ave_win)
     if stp_date is None:
         stp_date = (dt.datetime.strptime(bgn_date, "%Y%m%d") + dt.timedelta(days=1)).strftime("%Y%m%d")
+
+    signal = CSignalBase(universe)
 
     # --- load calendar
     calendar = CCalendar(calendar_path)
@@ -52,9 +69,14 @@ def fac_exp_MA(
         ("trade_date", "<", stp_date),
     ], t_value_columns=["trade_date", "instrument", "value"])
 
-    mov_ave_df = moving_average(src_df, "trade_date", "instrument", "value", mov_ave_win)
-    update_df = mov_ave_df.loc[mov_ave_df["trade_date"] >= bgn_date]
-    factor_dst_lib.update(t_update_df=update_df, t_using_index=True)
+    exp_df_by_date = pd.pivot_table(data=src_df, values="value", index="trade_date", columns="instrument")
+    res = {}
+    exp_df_by_date[universe].apply(signal.convert, axis=1, d=res)
+    fac_sig_raw_df = pd.DataFrame.from_dict(res, orient="index")
+    mov_ave_df = fac_sig_raw_df.rolling(window=mov_ave_win).mean()
+    mov_ave_norm_df = mov_ave_df.div(mov_ave_df.abs().sum(axis=1), axis=0).fillna(0)
+    update_df = mov_ave_norm_df.loc[mov_ave_norm_df.index >= bgn_date].stack().reset_index()
+    factor_dst_lib.update(t_update_df=update_df, t_using_index=False)
 
     # --- close libs
     factor_src_lib.close()
@@ -62,19 +84,26 @@ def fac_exp_MA(
     return 0
 
 
-def cal_gp_tests_mp(
+def cal_fac_exp_MA_mp(
         proc_num: int,
         factor_lbls: list[str], mov_ave_wins: list[int],
         run_mode: str, bgn_date: str, stp_date: str | None,
-        **kwargs
+        universe: list[str],
+        database_structure: dict[str, CLib1Tab1],
+        factors_exposure_dir: str,
+        calendar_path: str,
 ):
     t0 = dt.datetime.now()
     pool = mp.Pool(processes=proc_num)
     for factor_lbl, mov_ave_win in ittl.product(factor_lbls, mov_ave_wins):
         pool.apply_async(
             fac_exp_MA,
-            args=(factor_lbl, mov_ave_win, run_mode, bgn_date, stp_date),
-            kwds=kwargs
+            args=(factor_lbl, mov_ave_win,
+                  run_mode, bgn_date, stp_date,
+                  universe,
+                  database_structure,
+                  factors_exposure_dir,
+                  calendar_path),
         )
     pool.close()
     pool.join()

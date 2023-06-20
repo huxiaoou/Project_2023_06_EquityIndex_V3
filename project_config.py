@@ -113,6 +113,8 @@ factors = fac_sub_grp_amp + fac_sub_grp_amt \
           + fac_sub_grp_to + fac_sub_grp_ts + fac_sub_grp_twc \
           + fac_sub_grp_pos
 
+factors_ma = ["{}-M{:03d}".format(f, w) for f, w in ittl.product(factors, factor_mov_ave_wins)]
+
 universe_options = {
     "U3": ["IC.CFE", "IF.CFE", "IH.CFE"],
     "UCH": ["IC.CFE", "IH.CFE"],

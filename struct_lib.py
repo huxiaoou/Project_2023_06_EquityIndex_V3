@@ -1,6 +1,5 @@
-import itertools as ittl
 from skyrim.falkreath import CLib1Tab1, CTable
-from project_config import factors, factor_mov_ave_wins
+from project_config import factors, factors_ma
 
 database_structure: dict[str, CLib1Tab1] = {}
 
@@ -37,7 +36,7 @@ database_structure.update({
             "primary_keys": {"trade_date": "TEXT", "instrument": "TEXT"},
             "value_columns": {"value": "REAL"},
         })
-    ) for z in ["{}-M{:03d}".format(f, w) for f, w in ittl.product(factors, factor_mov_ave_wins)]
+    ) for z in factors_ma
 })
 
 # --- ic tests by factors
@@ -49,7 +48,7 @@ database_structure.update({
             "primary_keys": {"trade_date": "TEXT"},
             "value_columns": {"pearson": "REAL", "spearman": "REAL"},
         })
-    ) for z in ["ic-{}-M{:03d}".format(f, w) for f, w in ittl.product(factors, factor_mov_ave_wins)]
+    ) for z in ["ic-{}".format(f) for f in factors_ma]
 })
 
 # --- gp tests by factors
@@ -61,7 +60,7 @@ database_structure.update({
             "primary_keys": {"trade_date": "TEXT"},
             "value_columns": {"RL": "REAL", "RS": "REAL", "RH": "REAL"},
         })
-    ) for z in ["gp-{}-M{:03d}".format(f, w) for f, w in ittl.product(factors, factor_mov_ave_wins)]
+    ) for z in ["gp-{}".format(f) for f in factors_ma]
 })
 
 # --- signals
