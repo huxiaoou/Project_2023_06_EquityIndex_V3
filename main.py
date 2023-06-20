@@ -26,6 +26,7 @@ from algs.factor_exposure_cx import cal_fac_exp_cx_mp
 from algs.factor_exposure_exr import cal_fac_exp_exr_mp
 from algs.factor_exposure_mtm import cal_fac_exp_mtm_mp
 from algs.factor_exposure_pos import cal_fac_exp_pos_mp
+from algs.factor_exposure_rng import cal_fac_exp_rng_mp
 from algs.factor_exposure_sgm import cal_fac_exp_sgm_mp
 from algs.factor_exposure_size import cal_fac_exp_size_mp
 from algs.factor_exposure_skew import cal_fac_exp_skew_mp
@@ -34,6 +35,7 @@ from algs.factor_exposure_to import cal_fac_exp_to_mp
 from algs.factor_exposure_ts import cal_fac_exp_ts_mp
 from algs.factor_exposure_twc import cal_fac_exp_twc_mp
 from algs.factor_exposure_MA import cal_fac_exp_MA_mp
+
 from tests.ic_tests import cal_ic_tests_mp
 from tests.ic_tests_summary import cal_ic_tests_summary_mp
 from tests.gp_tests import cal_gp_tests_mp
@@ -211,6 +213,16 @@ if __name__ == "__main__":
                 intermediary_dir=research_intermediary_dir,
                 calendar_path=calendar_path,
             )
+        elif factor == "rng":
+            cal_fac_exp_rng_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                rng_windows=factors_args["rng_windows"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                major_return_dir=major_return_dir,
+                factors_exposure_dir=research_factors_exposure_dir
+            )
         elif factor == "sgm":
             cal_fac_exp_sgm_mp(
                 proc_num=proc_num,
@@ -294,7 +306,6 @@ if __name__ == "__main__":
         cal_fac_exp_MA_mp(
             proc_num=proc_num,
             factor_lbls=factors, mov_ave_wins=factor_mov_ave_wins,
-            # factor_lbls=["POSHLQ05"], mov_ave_wins=factor_mov_ave_wins,
             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
             universe=instruments_universe,
             database_structure=database_structure,

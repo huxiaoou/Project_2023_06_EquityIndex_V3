@@ -28,6 +28,7 @@ factors_args = {
     "cvr_windows": [21, 63, 126, 252],
     "exr_windows": [10, 21, 42, 63],
     "mtm_windows": [5, 10, 21, 63, 126, 252],
+    "rng_windows": [21, 63, 126, 252],
     "sgm_windows": [21, 63, 126, 252],
     "size_windows": [21, 63, 126, 252],
     "skew_windows": [21, 63, 126, 252],
@@ -53,6 +54,7 @@ cvp_windows = factors_args["cvp_windows"]
 cvr_windows = factors_args["cvr_windows"]
 exr_windows = factors_args["exr_windows"]
 mtm_windows = factors_args["mtm_windows"]
+rng_windows = factors_args["rng_windows"]
 sgm_windows = factors_args["sgm_windows"]
 size_windows = factors_args["size_windows"]
 skew_windows = factors_args["skew_windows"]
@@ -92,6 +94,7 @@ fac_sub_grp_exr = ["EXR{:03d}".format(_) for _ in exr_windows] \
 fac_sub_grp_mtm = ["MTM{:03d}".format(_) for _ in mtm_windows] + ["MTM{:03d}ADJ".format(_) for _ in mtm_windows]
 fac_sub_grp_pos = ["POSH{}Q{:02d}".format(d, t) for d, t in ittl.product(["L", "S"], top_players_qty)] + \
                   ["POSD{}Q{:02d}".format(d, t) for d, t in ittl.product(["L", "S"], top_players_qty)]
+fac_sub_grp_rng = ["RNG{:03d}".format(_) for _ in rng_windows]
 fac_sub_grp_sgm = ["SGM{:03d}".format(_) for _ in sgm_windows]
 fac_sub_grp_size = ["SIZE{:03d}".format(_) for _ in size_windows]
 fac_sub_grp_skew = ["SKEW{:03d}".format(_) for _ in skew_windows]
@@ -109,7 +112,7 @@ factors = fac_sub_grp_amp + fac_sub_grp_amt \
           + fac_sub_grp_csp + fac_sub_grp_csr + fac_sub_grp_ctp + fac_sub_grp_ctr + fac_sub_grp_cvp + fac_sub_grp_cvr \
           + fac_sub_grp_exr \
           + fac_sub_grp_mtm \
-          + fac_sub_grp_sgm + fac_sub_grp_size + fac_sub_grp_skew + fac_sub_grp_smt \
+          + fac_sub_grp_sgm + fac_sub_grp_rng + fac_sub_grp_size + fac_sub_grp_skew + fac_sub_grp_smt \
           + fac_sub_grp_to + fac_sub_grp_ts + fac_sub_grp_twc \
           + fac_sub_grp_pos
 
