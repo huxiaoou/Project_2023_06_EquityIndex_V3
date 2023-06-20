@@ -18,21 +18,21 @@ from project_setup import research_gp_tests_dir, research_gp_tests_summary_dir
 
 from preprocess.preprocess import split_spot_daily_k, update_major_minute, update_public_info
 from test_returns.test_returns import cal_test_returns_mp
-from factors_exposure import cal_fac_exp_amp_mp
-from factors_exposure import cal_fac_exp_amt_mp
-from factors_exposure import cal_fac_exp_basis_mp
-from factors_exposure import cal_fac_exp_beta_mp
-from factors_exposure import cal_fac_exp_cx_mp
-from factors_exposure import cal_fac_exp_exr_mp
-from factors_exposure import cal_fac_exp_mtm_mp
-from factors_exposure import cal_fac_exp_pos_mp
-from factors_exposure import cal_fac_exp_sgm_mp
-from factors_exposure import cal_fac_exp_size_mp
-from factors_exposure import cal_fac_exp_skew_mp
-from factors_exposure import cal_fac_exp_smt_mp
-from factors_exposure import cal_fac_exp_to_mp
-from factors_exposure import cal_fac_exp_ts_mp
-from factors_exposure import cal_fac_exp_twc_mp
+from algs.factor_exposure_amp import cal_fac_exp_amp_mp
+from algs.factor_exposure_amt import cal_fac_exp_amt_mp
+from algs.factor_exposure_basis import cal_fac_exp_basis_mp
+from algs.factor_exposure_beta import cal_fac_exp_beta_mp
+from algs.factor_exposure_cx import cal_fac_exp_cx_mp
+from algs.factor_exposure_exr import cal_fac_exp_exr_mp
+from algs.factor_exposure_mtm import cal_fac_exp_mtm_mp
+from algs.factor_exposure_pos import cal_fac_exp_pos_mp
+from algs.factor_exposure_sgm import cal_fac_exp_sgm_mp
+from algs.factor_exposure_size import cal_fac_exp_size_mp
+from algs.factor_exposure_skew import cal_fac_exp_skew_mp
+from algs.factor_exposure_smt import cal_fac_exp_smt_mp
+from algs.factor_exposure_to import cal_fac_exp_to_mp
+from algs.factor_exposure_ts import cal_fac_exp_ts_mp
+from algs.factor_exposure_twc import cal_fac_exp_twc_mp
 from algs.factor_exposure_MA import cal_fac_exp_MA_mp
 from tests.ic_tests import cal_ic_tests_mp
 from tests.ic_tests_summary import cal_ic_tests_summary_mp

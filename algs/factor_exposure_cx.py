@@ -1,5 +1,7 @@
 import os
 import datetime as dt
+import itertools as ittl
+import multiprocessing as mp
 import sys
 import pandas as pd
 from skyrim.falkreath import CLib1Tab1
@@ -88,4 +90,29 @@ def fac_exp_alg_cx(
     factor_lib.close()
 
     print("... @ {} factor = {:>12s} calculated".format(dt.datetime.now(), factor_lbl))
+    return 0
+
+
+def cal_fac_exp_cx_mp(proc_num: int,
+                      run_mode: str, bgn_date: str, stp_date: str | None,
+                      mgr_cx_windows: dict[str, list[int]], top_props: list[float],
+                      instruments_universe: list[str],
+                      database_structure: dict,
+                      major_return_dir: str,
+                      factors_exposure_dir: str):
+    t0 = dt.datetime.now()
+    pool = mp.Pool(processes=proc_num)
+    for cx, cx_windows in mgr_cx_windows.items():
+        for cx_window, top_prop in ittl.product(cx_windows, top_props):
+            pool.apply_async(fac_exp_alg_cx,
+                             args=(run_mode, bgn_date, stp_date,
+                                   cx, cx_window, top_prop,
+                                   instruments_universe,
+                                   database_structure,
+                                   major_return_dir,
+                                   factors_exposure_dir))
+    pool.close()
+    pool.join()
+    t1 = dt.datetime.now()
+    print("... total time consuming: {:.2f} seconds".format((t1 - t0).total_seconds()))
     return 0

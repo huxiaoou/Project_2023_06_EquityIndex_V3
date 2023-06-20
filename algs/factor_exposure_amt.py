@@ -1,5 +1,6 @@
 import os
 import datetime as dt
+import multiprocessing as mp
 import pandas as pd
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibWriter
@@ -44,4 +45,29 @@ def fac_exp_alg_amt(
     factor_lib.close()
 
     print("... @ {} factor = {:>12s} calculated".format(dt.datetime.now(), factor_lbl))
+    return 0
+
+
+def cal_fac_exp_amt_mp(proc_num: int,
+                       run_mode: str, bgn_date: str, stp_date: str | None,
+                       amt_windows: list[int],
+                       instruments_universe: list[str],
+                       database_structure: dict,
+                       major_return_dir: str,
+                       factors_exposure_dir: str,
+                       money_scale: int):
+    t0 = dt.datetime.now()
+    pool = mp.Pool(processes=proc_num)
+    for p_window in amt_windows:
+        pool.apply_async(fac_exp_alg_amt,
+                         args=(run_mode, bgn_date, stp_date, p_window,
+                               instruments_universe,
+                               database_structure,
+                               major_return_dir,
+                               factors_exposure_dir,
+                               money_scale))
+    pool.close()
+    pool.join()
+    t1 = dt.datetime.now()
+    print("... total time consuming: {:.2f} seconds".format((t1 - t0).total_seconds()))
     return 0

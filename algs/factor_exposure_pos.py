@@ -1,4 +1,5 @@
 import datetime as dt
+import multiprocessing as mp
 import pandas as pd
 from skyrim.whiterun import CCalendar
 from skyrim.falkreath import CLib1Tab1
@@ -138,4 +139,32 @@ def fac_exp_alg_pos(
 
     test_return_lib.close()
     hld_pos_lib.close()
+    return 0
+
+
+def cal_fac_exp_pos_mp(proc_num: int,
+                       run_mode: str, bgn_date: str, stp_date: str | None,
+                       top_players_qty: list[int],
+                       instruments_universe: list[str],
+                       database_structure: dict,
+                       factors_exposure_dir: str,
+                       test_returns_dir: str,
+                       intermediary_dir: str,
+                       calendar_path: str):
+    t0 = dt.datetime.now()
+    pool = mp.Pool(processes=proc_num)
+    for top_player_qty in top_players_qty:
+        pool.apply_async(fac_exp_alg_pos,
+                         args=(run_mode, bgn_date, stp_date,
+                               top_player_qty,
+                               instruments_universe,
+                               database_structure,
+                               factors_exposure_dir,
+                               test_returns_dir,
+                               intermediary_dir,
+                               calendar_path))
+    pool.close()
+    pool.join()
+    t1 = dt.datetime.now()
+    print("... total time consuming: {:.2f} seconds".format((t1 - t0).total_seconds()))
     return 0

@@ -1,5 +1,6 @@
 import os
 import datetime as dt
+import multiprocessing as mp
 import pandas as pd
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
@@ -70,8 +71,6 @@ def fac_exp_alg_beta(
 
 def fac_exp_alg_beta_diff(
         run_mode: str, bgn_date: str, stp_date: str | None, beta_window: int, beta_base_window: int,
-        instruments_universe: list[str],
-        calendar_path: str,
         database_structure: dict[str, CLib1Tab1],
         factors_exposure_dir: str,
 ):
@@ -81,8 +80,6 @@ def fac_exp_alg_beta_diff(
 
     if stp_date is None:
         stp_date = (dt.datetime.strptime(bgn_date, "%Y%m%d") + dt.timedelta(days=1)).strftime("%Y%m%d")
-
-    calendar = CCalendar(calendar_path)
 
     # --- init reader
     src_0_lib_structure = database_structure[src_0_lbl]
@@ -132,4 +129,39 @@ def fac_exp_alg_beta_diff(
     diff_lib.close()
 
     print("... @ {} factor = {:>12s} calculated".format(dt.datetime.now(), factor_lbl_diff))
+    return 0
+
+
+def cal_fac_exp_beta_mp(proc_num: int,
+                        run_mode: str, bgn_date: str, stp_date: str | None,
+                        beta_windows: list[int],
+                        instruments_universe: list[str],
+                        database_structure: dict,
+                        major_return_dir: str,
+                        equity_index_by_instrument_dir: str,
+                        factors_exposure_dir: str,
+                        calendar_path: str):
+    t0 = dt.datetime.now()
+    pool = mp.Pool(processes=proc_num)
+    for p_window in beta_windows:
+        pool.apply_async(fac_exp_alg_beta,
+                         args=(run_mode, bgn_date, stp_date, p_window,
+                               instruments_universe,
+                               calendar_path,
+                               database_structure,
+                               major_return_dir,
+                               equity_index_by_instrument_dir,
+                               factors_exposure_dir))
+    pool.close()
+    pool.join()
+    pool = mp.Pool(processes=proc_num)
+    for p_window in beta_windows[1:]:
+        pool.apply_async(fac_exp_alg_beta_diff,
+                         args=(run_mode, bgn_date, stp_date, p_window, beta_windows[0],
+                               database_structure,
+                               factors_exposure_dir))
+    pool.close()
+    pool.join()
+    t1 = dt.datetime.now()
+    print("... total time consuming: {:.2f} seconds".format((t1 - t0).total_seconds()))
     return 0

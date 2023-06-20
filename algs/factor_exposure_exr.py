@@ -1,4 +1,5 @@
 import datetime as dt
+import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from skyrim.whiterun import CCalendar
@@ -100,4 +101,30 @@ def fac_exp_alg_exr(
 
     em01_major_lib.close()
     print("... @ {} factor = {:>12s} calculated".format(dt.datetime.now(), factor_exr_lbl))
+    return 0
+
+
+def cal_fac_exp_exr_mp(proc_num: int,
+                       run_mode: str, bgn_date: str, stp_date: str | None,
+                       exr_windows: list[int], drifts: list[float],
+                       instruments_universe: list[str],
+                       database_structure: dict,
+                       factors_exposure_dir: str,
+                       intermediary_dir: str,
+                       calendar_path: str):
+    t0 = dt.datetime.now()
+    pool = mp.Pool(processes=proc_num)
+    for p_window in exr_windows:
+        pool.apply_async(fac_exp_alg_exr,
+                         args=(run_mode, bgn_date, stp_date,
+                               p_window, drifts,
+                               instruments_universe,
+                               database_structure,
+                               factors_exposure_dir,
+                               intermediary_dir,
+                               calendar_path))
+    pool.close()
+    pool.join()
+    t1 = dt.datetime.now()
+    print("... total time consuming: {:.2f} seconds".format((t1 - t0).total_seconds()))
     return 0

@@ -1,4 +1,6 @@
 import datetime as dt
+import itertools as ittl
+import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from skyrim.whiterun import CCalendar, CInstrumentInfoTable
@@ -109,4 +111,34 @@ def fac_exp_alg_smt(
 
         em01_major_lib.close()
         print("... @ {} factor = {:>12s} calculated".format(dt.datetime.now(), _iter_factor_lbl))
+    return 0
+
+
+def cal_fac_exp_smt_mp(proc_num: int,
+                       run_mode: str, bgn_date: str, stp_date: str | None,
+                       smt_windows: list[int], lbds: list[float],
+                       instruments_universe: list[str],
+                       database_structure: dict,
+                       factors_exposure_dir: str,
+                       intermediary_dir: str,
+                       calendar_path: str,
+                       futures_instru_info_path: str,
+                       amount_scale: float):
+    t0 = dt.datetime.now()
+    pool = mp.Pool(processes=proc_num)
+    for p_window, lbd in ittl.product(smt_windows, lbds):
+        pool.apply_async(fac_exp_alg_smt,
+                         args=(run_mode, bgn_date, stp_date,
+                               p_window, lbd,
+                               instruments_universe,
+                               database_structure,
+                               factors_exposure_dir,
+                               intermediary_dir,
+                               calendar_path,
+                               futures_instru_info_path,
+                               amount_scale))
+    pool.close()
+    pool.join()
+    t1 = dt.datetime.now()
+    print("... total time consuming: {:.2f} seconds".format((t1 - t0).total_seconds()))
     return 0
