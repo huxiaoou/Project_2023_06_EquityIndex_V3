@@ -324,16 +324,15 @@ if __name__ == "__main__":
             database_structure=database_structure,
             calendar_path=calendar_path)
     elif switch in ["ICSUM"]:
-        pass
-        # cal_ic_tests_summary_mp(
-        #     proc_num=proc_num,
-        #     test_windows=test_windows, factors=factors,
-        #     methods=["pearson", "spearman"], plot_top_n=6,
-        #     bgn_date=bgn_date, stp_date=stp_date,
-        #     database_structure=database_structure,
-        #     ic_tests_dir=research_ic_tests_dir,
-        #     ic_tests_summary_dir=research_ic_tests_summary_dir,
-        #     days_per_year=252)
+        cal_ic_tests_summary_mp(
+            proc_num=proc_num,
+            factors_ma=factors_ma,
+            methods=["pearson", "spearman"], icir_threshold=1.2,
+            bgn_date=bgn_date, stp_date=stp_date,
+            database_structure=database_structure,
+            ic_tests_dir=research_ic_tests_dir,
+            ic_tests_summary_dir=research_ic_tests_summary_dir,
+            days_per_year=252)
     elif switch in ["GP"]:
         pass
         # cal_gp_tests_mp(

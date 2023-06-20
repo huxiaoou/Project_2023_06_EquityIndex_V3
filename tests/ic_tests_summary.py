@@ -8,8 +8,8 @@ from skyrim.winterhold import plot_lines
 
 
 def cal_ic_tests_summary(
-        test_window: int, factors: list[str],
-        methods: list[str], plot_top_n: int,
+        factors_ma: list[str],
+        methods: list[str], icir_threshold: float,
         bgn_date: str, stp_date: str,
         database_structure: dict[str, CLib1Tab1],
         ic_tests_dir: str,
@@ -23,30 +23,27 @@ def cal_ic_tests_summary(
 
     statistics_data = []
     ic_data = {_: {} for _ in methods}
-    for factor_lbl in factors:
-        ic_test_lib_id = "ic-{}-TW{:03d}".format(factor_lbl, test_window)
+    for factor_ma in factors_ma:
+        ic_test_lib_id = "ic-{}".format(factor_ma)
         ic_test_lib_structure = database_structure[ic_test_lib_id]
-        ic_test_lib = CManagerLibReader(t_db_save_dir=os.path.join(ic_tests_dir, factor_lbl), t_db_name=ic_test_lib_structure.m_lib_name)
+        ic_test_lib = CManagerLibReader(t_db_save_dir=ic_tests_dir, t_db_name=ic_test_lib_structure.m_lib_name)
         ic_test_lib.set_default(ic_test_lib_structure.m_tab.m_table_name)
 
         ic_df = ic_test_lib.read_by_conditions(t_conditions=[
             ("trade_date", ">=", bgn_date),
             ("trade_date", "<", stp_date),
-        ], t_value_columns=["trade_date", "pearson", "spearman", "CH", "CF", "FH"]).set_index("trade_date")
+        ], t_value_columns=["trade_date", "pearson", "spearman"]).set_index("trade_date")
         ic_test_lib.close()
         obs = len(ic_df)
         res = {
-            "factor": factor_lbl,
+            "factor": factor_ma,
             "obs": obs,
-            "propCH": ic_df["CH"].mean(),
-            "propCF": ic_df["CF"].mean(),
-            "propFH": ic_df["FH"].mean(),
         }
         for method in methods:
             ic_srs, mt = ic_df[method], method_tag[method]
             mu = ic_srs.mean()
             sd = ic_srs.std()
-            icir = mu / sd * np.sqrt(days_per_year / test_window)
+            icir = mu / sd * np.sqrt(days_per_year)
             prop_pos = sum(ic_srs > 0) / obs
             prop_neg = sum(ic_srs < 0) / obs
             res.update({
@@ -57,11 +54,11 @@ def cal_ic_tests_summary(
                 mt + "ICPropNeg": prop_neg,
 
             })
-            ic_data[method][factor_lbl] = ic_srs
+            ic_data[method][factor_ma] = ic_srs
         statistics_data.append(res)
 
     sum_df = pd.DataFrame(statistics_data)
-    sum_file = "ic_tests_summary-TW{:03d}.csv.gz".format(test_window)
+    sum_file = "ic_tests_summary.csv.gz"
     sum_path = os.path.join(ic_tests_summary_dir, sum_file)
     sum_df.to_csv(sum_path, index=False, float_format="%.6f")
 
@@ -69,40 +66,39 @@ def cal_ic_tests_summary(
         mt = method_tag[method]
         icir_tag = mt + "ICIR"
         sum_df.sort_values(by=icir_tag, ascending=False, inplace=True)
-        factors_to_plot = sum_df.loc[sum_df[icir_tag].abs() >= 1.0, "factor"].tolist()
+        filter_selected_factors = sum_df[icir_tag].abs() >= icir_threshold
+        factors_to_plot = sum_df.loc[filter_selected_factors, "factor"].tolist()
         if factors_to_plot:
             all_ic_df = pd.DataFrame(ic_data[method])
-            all_ic_df_cumsum = all_ic_df.fillna(0).cumsum() / np.sqrt(test_window)
+            all_ic_df_cumsum = all_ic_df.fillna(0).cumsum()
             plot_df = all_ic_df_cumsum[factors_to_plot]
             plot_lines(
-                t_plot_df=plot_df, t_fig_name="ic_cumsum-TW{:03d}-{}".format(test_window, method),
+                t_plot_df=plot_df, t_fig_name="ic_cumsum-{}".format(method),
                 t_save_dir=ic_tests_summary_dir, t_colormap="jet",  # t_ylim=(-150, 90),
             )
 
             print("-" * 120)
-            print("| test_window = {:>3d} | method = {:>12s} |".format(test_window, method))
-            print(sum_df.head(plot_top_n))
-            print(sum_df.tail(plot_top_n))
+            print("| method = {:>12s} |".format(method))
+            print(sum_df.loc[filter_selected_factors])
         else:
-            print("... not enough factors are picked when method = {} with test_window = {}".format(method, test_window))
+            print("... not enough factors are picked when method = {}".format(method))
     return 0
 
 
 def cal_ic_tests_summary_mp(
         proc_num: int,
-        test_windows: list[int], factors: list[str],
-        methods: list[str], plot_top_n: int,
+        factors_ma: list[str],
+        methods: list[str], icir_threshold: float,
         bgn_date: str, stp_date: str | None,
         **kwargs
 ):
     t0 = dt.datetime.now()
     pool = mp.Pool(processes=proc_num)
-    for test_window in test_windows:
-        pool.apply_async(
-            cal_ic_tests_summary,
-            args=(test_window, factors, methods, plot_top_n, bgn_date, stp_date),
-            kwds=kwargs
-        )
+    pool.apply_async(
+        cal_ic_tests_summary,
+        args=(factors_ma, methods, icir_threshold, bgn_date, stp_date),
+        kwds=kwargs
+    )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()
