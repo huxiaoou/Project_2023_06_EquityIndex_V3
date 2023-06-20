@@ -12,8 +12,8 @@ def cal_ic_tests_summary(
         methods: list[str], icir_threshold: float,
         bgn_date: str, stp_date: str,
         database_structure: dict[str, CLib1Tab1],
-        ic_tests_dir: str,
-        ic_tests_summary_dir: str,
+        tests_result_dir: str,
+        tests_result_summary_dir: str,
         days_per_year: int,
 ):
     pd.set_option("display.float_format", "{:.4f}".format)
@@ -24,16 +24,16 @@ def cal_ic_tests_summary(
     statistics_data = []
     ic_data = {_: {} for _ in methods}
     for factor_ma in factors_ma:
-        ic_test_lib_id = "ic-{}".format(factor_ma)
-        ic_test_lib_structure = database_structure[ic_test_lib_id]
-        ic_test_lib = CManagerLibReader(t_db_save_dir=ic_tests_dir, t_db_name=ic_test_lib_structure.m_lib_name)
-        ic_test_lib.set_default(ic_test_lib_structure.m_tab.m_table_name)
+        test_lib_id = "ic-{}".format(factor_ma)
+        test_lib_structure = database_structure[test_lib_id]
+        test_lib = CManagerLibReader(t_db_save_dir=tests_result_dir, t_db_name=test_lib_structure.m_lib_name)
+        test_lib.set_default(test_lib_structure.m_tab.m_table_name)
 
-        ic_df = ic_test_lib.read_by_conditions(t_conditions=[
+        ic_df = test_lib.read_by_conditions(t_conditions=[
             ("trade_date", ">=", bgn_date),
             ("trade_date", "<", stp_date),
         ], t_value_columns=["trade_date", "pearson", "spearman"]).set_index("trade_date")
-        ic_test_lib.close()
+        test_lib.close()
         obs = len(ic_df)
         res = {
             "factor": factor_ma,
@@ -59,7 +59,7 @@ def cal_ic_tests_summary(
 
     sum_df = pd.DataFrame(statistics_data)
     sum_file = "ic_tests_summary.csv.gz"
-    sum_path = os.path.join(ic_tests_summary_dir, sum_file)
+    sum_path = os.path.join(tests_result_summary_dir, sum_file)
     sum_df.to_csv(sum_path, index=False, float_format="%.6f")
 
     for method in methods:
@@ -74,7 +74,7 @@ def cal_ic_tests_summary(
             plot_df = all_ic_df_cumsum[factors_to_plot]
             plot_lines(
                 t_plot_df=plot_df, t_fig_name="ic_cumsum-{}".format(method),
-                t_save_dir=ic_tests_summary_dir, t_colormap="jet",  # t_ylim=(-150, 90),
+                t_save_dir=tests_result_summary_dir, t_colormap="jet",  # t_ylim=(-150, 90),
             )
 
             print("-" * 120)

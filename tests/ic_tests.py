@@ -6,9 +6,9 @@ from skyrim.falkreath import CManagerLibReader, CManagerLibWriter
 from skyrim.whiterun import CCalendar
 
 
-def cal_corr_by_date(df: pd.DataFrame, x: str, y: str):
-    _rp = df[[x, y]].corr(method="pearson").at[x, y]
-    _rs = df[[x, y]].corr(method="spearman").at[x, y]
+def cal_corr_by_date(df: pd.DataFrame, fe: str, tr: str):
+    _rp = df[[fe, tr]].corr(method="pearson").at[fe, tr]
+    _rs = df[[fe, tr]].corr(method="spearman").at[fe, tr]
     return _rp, _rs
 
 
@@ -19,13 +19,14 @@ def shift_fac_exp(df: pd.DataFrame, row: str, col: str, val: str, shift_win: int
     return _res_df
 
 
-def ic_test_single_factor(factor_ma: str,
-                          run_mode: str, bgn_date: str, stp_date: str,
-                          ic_tests_dir: str,
-                          factors_exposure_dir: str,
-                          test_returns_dir: str,
-                          database_structure: dict[str, CLib1Tab1],
-                          calendar_path: str):
+def ic_test_single_factor(
+        factor_ma: str,
+        run_mode: str, bgn_date: str, stp_date: str,
+        tests_result_dir: str,
+        factors_exposure_dir: str,
+        test_returns_dir: str,
+        database_structure: dict[str, CLib1Tab1],
+        calendar_path: str):
     _test_window = 1
 
     # --- load calendar
@@ -33,11 +34,11 @@ def ic_test_single_factor(factor_ma: str,
     iter_dates = calendar.get_iter_list(bgn_date, stp_date, True)
     base_date = calendar.get_next_date(iter_dates[0], -_test_window - 1)
 
-    # --- ic-tests lib
-    ic_test_lib_id = "ic-{}".format(factor_ma)
-    ic_test_lib_structure = database_structure[ic_test_lib_id]
-    ic_test_lib = CManagerLibWriter(t_db_save_dir=ic_tests_dir, t_db_name=ic_test_lib_structure.m_lib_name)
-    ic_test_lib.initialize_table(t_table=ic_test_lib_structure.m_tab, t_remove_existence=run_mode in ["O", "OVERWRITE"])
+    # --- tests lib
+    test_lib_id = "ic-{}".format(factor_ma)
+    test_lib_structure = database_structure[test_lib_id]
+    test_lib = CManagerLibWriter(t_db_save_dir=tests_result_dir, t_db_name=test_lib_structure.m_lib_name)
+    test_lib.initialize_table(t_table=test_lib_structure.m_tab, t_remove_existence=run_mode in ["O", "OVERWRITE"])
 
     # --- factor library
     factor_lib_structure = database_structure[factor_ma]
@@ -54,7 +55,8 @@ def ic_test_single_factor(factor_ma: str,
         ("trade_date", ">=", base_date),
         ("trade_date", "<", stp_date),
     ], t_value_columns=["trade_date", "instrument", "value"])
-    fac_exp_df_shift = shift_fac_exp(fac_exp_df, row="trade_date", col="instrument", val="value", shift_win=_test_window + 1)
+    fac_exp_df_shift = shift_fac_exp(
+        fac_exp_df, row="trade_date", col="instrument", val="value", shift_win=_test_window + 1)
 
     test_return_df = test_return_lib.read_by_conditions(
         t_conditions=[
@@ -63,19 +65,20 @@ def ic_test_single_factor(factor_ma: str,
         ], t_value_columns=["trade_date", "instrument", "value"]
     )
 
-    ic_test_input_df = pd.merge(
+    test_input_df = pd.merge(
         left=fac_exp_df_shift, right=test_return_df,
         on=["trade_date", "instrument"], suffixes=("_e", "_r"),
         how="right"
     ).set_index("instrument")
-    res_srs = ic_test_input_df.groupby(by="trade_date").apply(cal_corr_by_date, x="value_e", y="value_r")
+    res_srs = test_input_df.groupby(by="trade_date").apply(
+        cal_corr_by_date, fe="value_e", tr="value_r")
     pr_srs, sr_srs = zip(*res_srs)
-    ic_test_df = pd.DataFrame({
+    test_res_df = pd.DataFrame({
         "pearson": pr_srs,
         "spearman": sr_srs,
     }, index=res_srs.index)
-    ic_test_lib.update(t_update_df=ic_test_df, t_using_index=True)
-    ic_test_lib.close()
+    test_lib.update(t_update_df=test_res_df, t_using_index=True)
+    test_lib.close()
     factor_lib.close()
     test_return_lib.close()
     return 0
