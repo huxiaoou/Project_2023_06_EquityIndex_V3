@@ -350,24 +350,23 @@ if __name__ == "__main__":
             database_structure=database_structure,
             tests_result_dir=research_gp_tests_dir,
             tests_result_summary_dir=research_gp_tests_summary_dir)
-    # elif switch in ["GPCOR"]:
-    #     pass
-    #     # cal_gp_tests_corr(
-    #     #     test_window=10, uid="U3", factors=[
-    #     #         "EXR042D3",
-    #     #         "CTP063T10",
-    #     #         "AMPH063T02",
-    #     #         "SKEW126",
-    #     #         "BASIS_D021",
-    #     #         "BETA_D063",
-    #     #         "CTR126T01",
-    #     #         "TS_D252",
-    #     #         "TWCV021",
-    #     #     ],
-    #     #     bgn_date=bgn_date, stp_date=stp_date,
-    #     #     database_structure=database_structure,
-    #     #     gp_tests_dir=research_gp_tests_dir,
-    #     #     gp_tests_summary_dir=research_gp_tests_summary_dir)
+    elif switch in ["GPCOR"]:
+        cal_gp_tests_corr(
+            factors_ma=[
+                "EXR042D3-M005",
+                "CTP063T10-M005",
+                "AMPH063T02-M005",
+                "SKEW126-M005",
+                "BASIS_D021-M005",
+                "BETA_D063-M005",
+                "CTR126T01-M005",
+                "TS_D252-M005",
+                "TWCV021-M005",
+            ],
+            bgn_date=bgn_date, stp_date=stp_date,
+            database_structure=database_structure,
+            tests_result_dir=research_gp_tests_dir,
+            tests_result_summary_dir=research_gp_tests_summary_dir)
     # elif switch in ["SIG"]:
     #     pass
     #     # cal_signals_mp(
