@@ -9,7 +9,7 @@ from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriter
 
 
-class CSignalBase(object):
+class CSigFromFactor(object):
     def __init__(self, t_universe: list[str]):
         self.m_universe = t_universe
         self.m_u_size = len(self.m_universe)
@@ -41,7 +41,7 @@ def fac_exp_MA(
     if stp_date is None:
         stp_date = (dt.datetime.strptime(bgn_date, "%Y%m%d") + dt.timedelta(days=1)).strftime("%Y%m%d")
 
-    signal = CSignalBase(universe)
+    signal = CSigFromFactor(universe)
 
     # --- load calendar
     calendar = CCalendar(calendar_path)

@@ -41,6 +41,7 @@ from tests.ic_tests_summary import cal_ic_tests_summary_mp
 from tests.gp_tests import cal_gp_tests_mp
 from tests.gp_tests_summary import cal_gp_tests_summary_mp
 from tests.gp_tests_corr import cal_gp_tests_corr
+from signals.signals import cal_signals_mp
 
 if __name__ == "__main__":
     args_parser = argparse.ArgumentParser(description="Entry point of this project")
@@ -367,18 +368,18 @@ if __name__ == "__main__":
             database_structure=database_structure,
             tests_result_dir=research_gp_tests_dir,
             tests_result_summary_dir=research_gp_tests_summary_dir)
-    # elif switch in ["SIG"]:
-    #     pass
-    #     # cal_signals_mp(
-    #     #     proc_num=5, sids=["S000", "S001", "S002", "S003", "S004", "S005"],
-    #     #     signals_structure=signals_structure,
-    #     #     universe_options=universe_options,
-    #     #     run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #     #     database_structure=database_structure,
-    #     #     factors_exposure_dir=research_factors_exposure_dir,
-    #     #     signals_dir=research_signals_dir,
-    #     #     calendar_path=calendar_path,
-    #     # )
+    elif switch in ["SIG"]:
+        cal_signals_mp(
+            proc_num=5, sids_fix=[], sids_dyn=[],
+            signals_structure={},
+            universe=instruments_universe,
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            trn_win=3, lbd=1000,
+            signals_dir=research_signals_dir,
+            factors_exposure_dir=research_factors_exposure_dir,
+            gp_tests_dir=research_gp_tests_dir,
+            database_structure=database_structure,
+            calendar_path=calendar_path)
     # elif switch in ["SIMU"]:
     #     pass
     #     # cal_simulation_mp(

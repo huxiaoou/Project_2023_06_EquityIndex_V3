@@ -95,6 +95,8 @@ if __name__ == "__main__":
     check_and_mkdir(research_ic_tests_summary_dir)
     check_and_mkdir(research_gp_tests_summary_dir)
     check_and_mkdir(research_signals_dir)
+    check_and_mkdir(os.path.join(research_signals_dir, "weights"))
+    check_and_mkdir(os.path.join(research_signals_dir, "models"))
     check_and_mkdir(research_simulations_dir)
 
     print("... directory system for this project has been established.")
