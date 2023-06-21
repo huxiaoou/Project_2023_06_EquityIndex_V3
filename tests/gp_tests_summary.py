@@ -2,7 +2,6 @@ import os
 import datetime as dt
 import pandas as pd
 import multiprocessing as mp
-import itertools as ittl
 from skyrim.falkreath import CLib1Tab1, CManagerLibReader
 from skyrim.riften import CNAV
 

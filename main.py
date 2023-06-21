@@ -62,13 +62,12 @@ if __name__ == "__main__":
             "preprocess/pub": "20150416",
             "test_returns": "20150416",
             "factor_exposures": "20150416", 
+            "factor_exposures_moving_average": "20160615", 
             
-            "factor_exposures_moving_average": "20160525", 
-            
-            "tests": "20160601", 
-            "tests_summary": "20160601", 
-            "signals": "20160601", 
-            "simu": "20160601", 
+            "tests": "20160701", 
+            "tests_summary": "20160701", 
+            "signals": "20160701", 
+            "simu": "20160701", 
         }
         """)
     args_parser.add_argument("-s", "--stp", type=str, help="""

@@ -71,30 +71,26 @@ def fac_exp_alg_beta(
 
 def fac_exp_alg_beta_diff(
         run_mode: str, bgn_date: str, stp_date: str | None, beta_window: int, beta_base_window: int,
+        instruments_universe: list[str],
+        calendar_path: str,
         database_structure: dict[str, CLib1Tab1],
         factors_exposure_dir: str,
 ):
-    src_0_lbl = "BETA{:03d}".format(beta_base_window)
-    src_1_lbl = "BETA{:03d}".format(beta_window)
+    src_lbl = "BETA{:03d}".format(beta_base_window)
     factor_lbl_diff = "BETA_D{:03d}".format(beta_window)
 
     if stp_date is None:
         stp_date = (dt.datetime.strptime(bgn_date, "%Y%m%d") + dt.timedelta(days=1)).strftime("%Y%m%d")
 
-    # --- init reader
-    src_0_lib_structure = database_structure[src_0_lbl]
-    src_0_lib = CManagerLibReader(
-        t_db_name=src_0_lib_structure.m_lib_name,
-        t_db_save_dir=factors_exposure_dir
-    )
-    src_0_lib.set_default(t_default_table_name=src_0_lib_structure.m_tab.m_table_name)
+    calendar = CCalendar(calendar_path)
 
-    src_1_lib_structure = database_structure[src_1_lbl]
-    src_1_lib = CManagerLibReader(
-        t_db_name=src_1_lib_structure.m_lib_name,
+    # --- init reader
+    src_lib_structure = database_structure[src_lbl]
+    src_lib = CManagerLibReader(
+        t_db_name=src_lib_structure.m_lib_name,
         t_db_save_dir=factors_exposure_dir
     )
-    src_1_lib.set_default(t_default_table_name=src_1_lib_structure.m_tab.m_table_name)
+    src_lib.set_default(t_default_table_name=src_lib_structure.m_tab.m_table_name)
 
     # --- init diff writer
     diff_lib_structure = database_structure[factor_lbl_diff]
@@ -105,27 +101,27 @@ def fac_exp_alg_beta_diff(
     diff_lib.initialize_table(t_table=diff_lib_structure.m_tab, t_remove_existence=run_mode in ["O", "OVERWRITE"])
 
     # --- load hist and calculate
-    src_0_df = src_0_lib.read_by_conditions(
+    iter_dates = calendar.get_iter_list(bgn_date, stp_date, True)
+    base_date = calendar.get_next_date(iter_dates[0], -beta_window)
+    src_df = src_lib.read_by_conditions(
         t_conditions=[
-            ("trade_date", ">=", bgn_date),
+            ("trade_date", ">=", base_date),
             ("trade_date", "<", stp_date),
         ], t_value_columns=["trade_date", "instrument", "value"],
     ).set_index("trade_date")
 
-    src_1_df = src_1_lib.read_by_conditions(
-        t_conditions=[
-            ("trade_date", ">=", bgn_date),
-            ("trade_date", "<", stp_date),
-        ], t_value_columns=["trade_date", "instrument", "value"],
-    ).set_index("trade_date")
-
-    p0_df = pd.pivot_table(data=src_0_df, index="trade_date", columns="instrument", values="value")
-    p1_df = pd.pivot_table(data=src_1_df, index="trade_date", columns="instrument", values="value")
-    diff_df = (p0_df / p1_df - 1).stack().reset_index(level=1)
+    diff_dfs = []
+    for instrument, instrument_df in src_df.groupby(by="instrument"):
+        if instrument not in instruments_universe:
+            continue
+        res_df = instrument_df.sort_index(ascending=True)
+        res_df["diff"] = res_df["value"] - res_df["value"].shift(beta_window)
+        diff_dfs.append(res_df[["instrument", "diff"]])
+    diff_df = pd.concat(diff_dfs, axis=0, ignore_index=False).sort_index(ascending=True)
+    diff_df = diff_df.loc[diff_df.index >= bgn_date]
     diff_lib.update(t_update_df=diff_df, t_using_index=True)
 
-    src_0_lib.close()
-    src_1_lib.close()
+    src_lib.close()
     diff_lib.close()
 
     print("... @ {} factor = {:>12s} calculated".format(dt.datetime.now(), factor_lbl_diff))
@@ -158,6 +154,8 @@ def cal_fac_exp_beta_mp(proc_num: int,
     for p_window in beta_windows[1:]:
         pool.apply_async(fac_exp_alg_beta_diff,
                          args=(run_mode, bgn_date, stp_date, p_window, beta_windows[0],
+                               instruments_universe,
+                               calendar_path,
                                database_structure,
                                factors_exposure_dir))
     pool.close()
