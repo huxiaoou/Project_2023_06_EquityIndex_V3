@@ -21,12 +21,18 @@ def shift_wgt(df: pd.DataFrame, row: str, col: str, val: str, shift_win: int):
 class CSignalBase(object):
     def __init__(self, sid: str,
                  run_mode: str, bgn_date: str, stp_date: str | None,
-                 signals_dir: str):
+                 signals_dir: str,
+                 calendar_path: str,
+                 ):
         self.m_sid = sid
         self.m_run_mode = run_mode
         if stp_date is None:
             stp_date = (dt.datetime.strptime(bgn_date, "%Y%m%d") + dt.timedelta(days=1)).strftime("%Y%m%d")
         self.m_bgn_date, self.m_stp_date = bgn_date, stp_date
+        calendar = CCalendar(calendar_path)
+        self.m_FIX_TEST_WIN = 1
+        self.m_base_date = calendar.get_next_date(self.m_bgn_date, -self.m_FIX_TEST_WIN - 1)
+        self.m_iter_dates: list[str] = calendar.get_iter_list(bgn_date, stp_date, True)
 
         # --- save destination
         self.m_signals_dir = signals_dir
@@ -35,15 +41,7 @@ class CSignalBase(object):
     def main_cal_sim(self, cost_rate: float,
                      database_structure: dict[str, CLib1Tab1],
                      test_returns_dir: str,
-                     simulations_dir: str,
-                     calendar_path: str):
-        fix_test_window = 1
-
-        # --- load calendar
-        calendar = CCalendar(calendar_path)
-        iter_dates = calendar.get_iter_list(self.m_bgn_date, self.m_stp_date, True)
-        base_date = calendar.get_next_date(iter_dates[0], -fix_test_window - 1)
-
+                     simulations_dir: str):
         # --- signals
         sig_lib_id = self.m_sid
         sig_lib_structure = database_structure[sig_lib_id]
@@ -51,12 +49,12 @@ class CSignalBase(object):
         sig_lib.set_default(sig_lib_structure.m_tab.m_table_name)
         sig_df = sig_lib.read_by_conditions(
             t_conditions=[
-                ("trade_date", ">=", base_date),
+                ("trade_date", ">=", self.m_base_date),
                 ("trade_date", "<", self.m_stp_date),
             ], t_value_columns=["trade_date", "instrument", "value"]
         )
         sig_lib.close()
-        sig_df_shift, dlt_wgt_srs = shift_wgt(sig_df, row="trade_date", col="instrument", val="value", shift_win=fix_test_window + 1)
+        sig_df_shift, dlt_wgt_srs = shift_wgt(sig_df, row="trade_date", col="instrument", val="value", shift_win=self.m_FIX_TEST_WIN + 1)
 
         # --- test return library
         test_return_lib_id = "test_return_o"
@@ -82,20 +80,13 @@ class CSignalBase(object):
             "rawRet": res_srs,
             "dltWgt": dlt_wgt_srs,
         })
+        simu_df = simu_df[simu_df.index >= self.m_bgn_date]
         simu_df["netRet"] = simu_df["rawRet"] - simu_df["dltWgt"] * cost_rate
         simu_df["nav"] = (1 + simu_df["netRet"]).cumprod()
         simu_file = "{}-nav.csv.gz".format(self.m_sid)
         simu_path = os.path.join(simulations_dir, simu_file)
         simu_df[["netRet", "nav"]].to_csv(simu_path, index_label="trade_date", float_format="%.8f")
 
-        nav = CNAV(t_raw_nav_srs=simu_df["netRet"], t_annual_rf_rate=0, t_type="RET")
-        nav.cal_all_indicators()
-        print("...", self.m_sid, "simulated",
-              "mu  = {:.6f}".format(nav.m_return_mean / 100),
-              "sd  = {:.6f}".format(nav.m_return_std / 100),
-              "sr  = {:.3f}".format(nav.m_sharpe_ratio),
-              "cr  = {:.3f}".format(nav.m_calmar_ratio),
-              "mdd = {:.3f}".format(nav.m_max_drawdown_scale), )
         return 0
 
 
@@ -104,8 +95,9 @@ class CSignal(CSignalBase):
                  factors: list[str],
                  run_mode: str, bgn_date: str, stp_date: str | None,
                  signals_dir: str,
-                 database_structure: dict[str, CLib1Tab1]):
-        super().__init__(sid, run_mode, bgn_date, stp_date, signals_dir)
+                 database_structure: dict[str, CLib1Tab1],
+                 calendar_path: str):
+        super().__init__(sid, run_mode, bgn_date, stp_date, signals_dir, calendar_path)
         self.m_universe = universe
         self.m_factors = factors
 
@@ -120,12 +112,12 @@ class CSignal(CSignalBase):
     def _cal_weight(self, database_structure: dict[str, CLib1Tab1], factors_exposure_dir: str):
         dfs_list = []
         for factor in self.m_factors:
-            factor_dst_lib_structure = database_structure[factor]
+            factor_lib_structure = database_structure[factor]
             factor_lib = CManagerLibReader(
-                t_db_name=factor_dst_lib_structure.m_lib_name,
+                t_db_name=factor_lib_structure.m_lib_name,
                 t_db_save_dir=factors_exposure_dir
             )
-            factor_lib.set_default(factor_dst_lib_structure.m_tab.m_table_name)
+            factor_lib.set_default(factor_lib_structure.m_tab.m_table_name)
             df = factor_lib.read_by_conditions(t_conditions=[
                 ("trade_date", ">=", self.m_bgn_date),
                 ("trade_date", "<", self.m_stp_date),
@@ -158,9 +150,10 @@ class CSignalFixWeight(CSignal):
                  factors_struct: tuple[tuple],
                  run_mode: str, bgn_date: str, stp_date: str | None,
                  signals_dir: str,
-                 database_structure: dict[str, CLib1Tab1]):
+                 database_structure: dict[str, CLib1Tab1],
+                 calendar_path: str):
         factors, fix_weights = zip(*factors_struct)
-        super().__init__(sid, universe, factors, run_mode, bgn_date, stp_date, signals_dir, database_structure)
+        super().__init__(sid, universe, factors, run_mode, bgn_date, stp_date, signals_dir, database_structure, calendar_path)
         ws = pd.Series(data=fix_weights, index=factors)
         self.m_fix_weights = ws / ws.abs().sum()
 
@@ -190,13 +183,14 @@ class CSignalDynamicWeight(CSignal):
                  signals_dir: str,
                  gp_tests_dir: str,
                  database_structure: dict[str, CLib1Tab1],
-                 calendar: CCalendarMonthly):
-        super().__init__(sid, universe, factors, run_mode, bgn_date, stp_date, signals_dir, database_structure)
+                 calendar_path: str):
+        super().__init__(sid, universe, factors, run_mode, bgn_date, stp_date, signals_dir, database_structure, calendar_path)
         self.m_signals_models_dir = os.path.join(self.m_signals_dir, "models")
         self.m_gp_tests_dir = gp_tests_dir
         self.m_trn_win = trn_win
         self.m_lbd = lbd
 
+        calendar = CCalendarMonthly(calendar_path)
         self.m_train_dates = []
         self.__load_train_dates(calendar)
 
@@ -205,7 +199,6 @@ class CSignalDynamicWeight(CSignal):
 
         self.m_opt_wgt = {}
         self.m_opt_wgt_df = pd.DataFrame()
-        self.m_iter_dates: list[str] = calendar.get_iter_list(bgn_date, stp_date, True)
 
     def __load_train_dates(self, calendar: CCalendarMonthly):
         iter_months = calendar.map_iter_dates_to_iter_months(self.m_bgn_date, self.m_stp_date)
@@ -297,7 +290,6 @@ def cal_signals_mp(
         database_structure: dict[str, CLib1Tab1],
         calendar_path: str):
     t0 = dt.datetime.now()
-    calendar = CCalendarMonthly(calendar_path)
 
     # --- for fix
     pool = mp.Pool(processes=proc_num)
@@ -307,7 +299,8 @@ def cal_signals_mp(
                                   sig_struct["factors_struct"],
                                   run_mode, bgn_date, stp_date,
                                   signals_dir,
-                                  database_structure)
+                                  database_structure,
+                                  calendar_path)
         pool.apply_async(signal.main_cal_sig, args=(database_structure, factors_exposure_dir))
     pool.close()
     pool.join()
@@ -323,7 +316,7 @@ def cal_signals_mp(
                                       signals_dir,
                                       gp_tests_dir,
                                       database_structure,
-                                      calendar)
+                                      calendar_path)
         pool.apply_async(signal.main_cal_sig, args=(database_structure, factors_exposure_dir))
     pool.close()
     pool.join()
@@ -347,12 +340,11 @@ def cal_simulations_mp(
     # --- for fix
     pool = mp.Pool(processes=proc_num)
     for sid in sids:
-        signal = CSignalBase(sid, run_mode, bgn_date, stp_date, signals_dir)
+        signal = CSignalBase(sid, run_mode, bgn_date, stp_date, signals_dir, calendar_path)
         pool.apply_async(signal.main_cal_sim, args=(cost_rate,
                                                     database_structure,
                                                     test_returns_dir,
-                                                    simulations_dir,
-                                                    calendar_path))
+                                                    simulations_dir))
     pool.close()
     pool.join()
     t1 = dt.datetime.now()

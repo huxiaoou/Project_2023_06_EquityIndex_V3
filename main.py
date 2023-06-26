@@ -5,7 +5,7 @@ from project_config import factors, factors_ma, factors_args, test_return_types,
 from project_config import manager_cx_windows
 from project_config import cost_rate
 from struct_lib import database_structure
-from struct_sig import signals_structure
+from struct_sig import signals_structure, fix_sids, dyn_sids
 from project_setup import calendar_path, futures_instru_info_path
 from project_setup import major_minor_dir, major_return_dir, md_by_instru_dir
 from project_setup import futures_md_dir, futures_md_structure_path
@@ -69,8 +69,10 @@ if __name__ == "__main__":
             
             "tests": "20160701", 
             "tests_summary": "20160701", 
-            "signals": "20160701", 
+            
+            "signals": "20160627", 
             "simu": "20160701", 
+            "simusum": "20160701",  # not necessary indeed
         }
         """)
     args_parser.add_argument("-s", "--stp", type=str, help="""
@@ -373,8 +375,8 @@ if __name__ == "__main__":
     elif switch in ["SIG"]:
         cal_signals_mp(
             proc_num=5,
-            sids_fix=list(signals_structure["sigFix"].keys()),
-            sids_dyn=list(signals_structure["sigDyn"].keys()),
+            sids_fix=fix_sids,
+            sids_dyn=dyn_sids,
             signals_structure=signals_structure,
             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
             trn_win=3, lbd=1000,
@@ -385,7 +387,7 @@ if __name__ == "__main__":
             calendar_path=calendar_path)
     elif switch in ["SIMU"]:
         cal_simulations_mp(
-            proc_num=5, sids=["S000", "S001", "S002"],
+            proc_num=5, sids=fix_sids + dyn_sids,
             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
             cost_rate=cost_rate,
             signals_dir=research_signals_dir,
@@ -395,7 +397,7 @@ if __name__ == "__main__":
             calendar_path=calendar_path)
     elif switch in ["SIMUSUM"]:
         cal_simulations_summary(
-            sids=["S000", "S001", "S002"],
+            sids=fix_sids + dyn_sids,
             simulations_dir=research_simulations_dir,
             simulations_summary_dir=research_simulations_summary_dir)
     else:

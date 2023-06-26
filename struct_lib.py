@@ -72,7 +72,7 @@ database_structure.update({
             "primary_keys": {"trade_date": "TEXT", "instrument": "TEXT"},
             "value_columns": {"value": "REAL"},
         })
-    ) for z in ["S{:03d}".format(_) for _ in range(20)]
+    ) for z in ["S{:03d}".format(_) for _ in range(200)]
 })
 
 # --- em01 by major contract
