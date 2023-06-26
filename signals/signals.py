@@ -237,7 +237,7 @@ class CSignalDynamicWeight(CSignal):
             else:
                 mu, sgm = ret_df.mean(), ret_df.cov()
                 if (r0 := np.linalg.matrix_rank(ret_df)) < (r1 := len(self.m_factors)):
-                    print(self.m_sid, train_end_month, train_bgn_date, train_end_date, "{}/{}".format(r0, r1))
+                    # print(self.m_sid, train_end_month, train_bgn_date, train_end_date, "{}/{}".format(r0, r1))
                     ws = None
                 else:
                     w, _ = minimize_utility(t_mu=mu.values, t_sigma=sgm.values, t_lbd=self.m_lbd)
