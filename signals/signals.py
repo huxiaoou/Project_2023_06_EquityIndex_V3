@@ -1,6 +1,7 @@
 import os
 import datetime as dt
 import multiprocessing as mp
+import numpy as np
 import pandas as pd
 from skyrim.falkreath import CLib1Tab1, CManagerLibReader
 from skyrim.falkreath import CManagerLibWriter
@@ -31,7 +32,7 @@ class CSignal(object):
         self.__load_factors_weight(database_structure, factors_exposure_dir)
 
         # --- signal data and lib
-        self.m_sig_save_df = pd.DataFrame()
+        self.m_sig_save_df = pd.DataFrame()  # with index = "trade_date", values = ["instrument", "value"]
         self.m_sig_lib_structure = database_structure[self.m_sid]
 
         # --- save destination
@@ -57,10 +58,10 @@ class CSignal(object):
             pivot_df["factor"] = factor
             dfs_list.append(pivot_df)
         raw_wgt_df = pd.concat(dfs_list, axis=0, ignore_index=False)
-        self.m_raw_wgt_df = raw_wgt_df.sort_values(by=["trade_date", "instrument"])
+        self.m_raw_wgt_df = raw_wgt_df.sort_values(by=["trade_date", "factor"])
         return 0
 
-    def __save(self):
+    def _save(self):
         sig_lib = CManagerLibWriter(t_db_save_dir=self.m_signals_weights_dir, t_db_name=self.m_sig_lib_structure.m_lib_name)
         sig_lib.initialize_table(t_table=self.m_sig_lib_structure.m_tab, t_remove_existence=self.m_run_mode in ["O", "OVERWRITE"])
         sig_lib.update(self.m_sig_save_df, t_using_index=True)
@@ -99,6 +100,7 @@ class CSignalFixWeight(CSignal):
 
     def main(self):
         self.__cal_weight()
+        self._save()
         return 0
 
 
@@ -126,15 +128,15 @@ class CSignalDynamicWeight(CSignal):
 
         self.m_opt_wgt = {}
         self.m_opt_wgt_df = pd.DataFrame()
-        self.m_iter_dates: list[str] = []
+        self.m_iter_dates: list[str] = calendar.get_iter_list(bgn_date, stp_date, True)
 
     def __load_train_dates(self, calendar: CCalendarMonthly):
         iter_months = calendar.map_iter_dates_to_iter_months(self.m_bgn_date, self.m_stp_date)
         for train_end_month in iter_months:
-            model_month_dir = os.path.join(self.m_signals_models_dir, train_end_month[0:4], train_end_month)
-            check_and_mkdir(model_month_dir)
             train_bgn_date, train_end_date = calendar.get_bgn_and_end_dates_for_trailing_window(train_end_month, self.m_trn_win)
             self.m_train_dates.append((train_end_month, train_bgn_date, train_end_date))
+            check_and_mkdir(year_dir := os.path.join(self.m_signals_models_dir, train_end_month[0:4]))
+            check_and_mkdir(os.path.join(year_dir, train_end_month))
         return 0
 
     def __load_gp_test_return(self, database_structure: dict[str, CLib1Tab1]):
@@ -159,25 +161,40 @@ class CSignalDynamicWeight(CSignal):
         for train_end_month, train_bgn_date, train_end_date in self.m_train_dates:
             filter_dates = (self.m_gp_ret_df.index >= train_bgn_date) & (self.m_gp_ret_df.index <= train_end_date)
             ret_df = self.m_gp_ret_df.loc[filter_dates, self.m_factors]
-            mu, sgm = ret_df.mean(), ret_df.cov()
-            w, _ = minimize_utility(t_mu=mu.values, t_sigma=sgm.values, t_lbd=self.m_lbd)
-            self.m_opt_wgt[train_end_date] = pd.Series(data=w, index=mu.index)
+            if len(ret_df) < 60:
+                k = len(self.m_factors)
+                ws = pd.Series(data=1 / k, index=self.m_factors)
+            else:
+                mu, sgm = ret_df.mean(), ret_df.cov()
+                if (r0 := np.linalg.matrix_rank(ret_df)) < (r1 := len(self.m_factors)):
+                    print(self.m_sid, train_end_month, train_bgn_date, train_end_date, "{}/{}".format(r0, r1))
+                    ws = None
+                else:
+                    w, _ = minimize_utility(t_mu=mu.values, t_sigma=sgm.values, t_lbd=self.m_lbd)
+                    ws = pd.Series(data=w, index=mu.index)
+
+            if ws is not None:
+                self.m_opt_wgt[train_end_date] = ws
+                model_save_df = pd.DataFrame({self.m_sid: ws})
+                model_save_file = "{}-{}.csv.gz".format(self.m_sid, train_end_month)
+                model_save_path = os.path.join(self.m_signals_models_dir, train_end_month[0:4], train_end_month, model_save_file)
+                model_save_df.to_csv(model_save_path, index_label="factor", float_format="%.6f")
         return 0
 
     def __sumprod_weights(self, daily_fac_instru_df: pd.DataFrame):
         xt = daily_fac_instru_df.set_index("factor").T
-        t = daily_fac_instru_df.name
+        t = daily_fac_instru_df.index[0]
         y = self.m_opt_wgt_df.loc[t, xt.columns]
         return xt @ y
 
     def __cal_weight(self):
         header_df = pd.DataFrame({"trade_date": self.m_iter_dates})
-        opt_wgt_df = pd.DataFrame.from_dict(self.m_opt_wgt, orient='index')
+        opt_wgt_df = pd.DataFrame.from_dict(self.m_opt_wgt, orient="index")
         self.m_opt_wgt_df = pd.merge(
             left=header_df, right=opt_wgt_df,
             left_on="trade_date", right_index=True,
             how="left"
-        ).shift(1).fillna(method="ffill")
+        ).set_index("trade_date").fillna(method="ffill").shift(1).fillna(method="bfill")
 
         sig_grp_df = self.m_raw_wgt_df.groupby(lambda z: z).apply(self.__sumprod_weights)
         sig_nrm_df = sig_grp_df.div(sig_grp_df.abs().sum(axis=1), axis=0).fillna(0)
@@ -187,12 +204,13 @@ class CSignalDynamicWeight(CSignal):
     def main(self):
         self.__cal_models()
         self.__cal_weight()
+        self._save()
         return 0
 
 
 def cal_signals_mp(
         proc_num: int, sids_fix: list[str], sids_dyn: list[str],
-        signals_structure: dict[str, dict], universe: list[str],
+        signals_structure: dict[str, dict],
         run_mode: str, bgn_date: str, stp_date: str | None,
         trn_win: int, lbd: float,
         signals_dir: str,
@@ -206,8 +224,8 @@ def cal_signals_mp(
     # --- for fix
     pool = mp.Pool(processes=proc_num)
     for sid in sids_fix:
-        sig_struct = signals_structure[sid]
-        signal = CSignalFixWeight(sid, universe,
+        sig_struct = signals_structure["sigFix"][sid]
+        signal = CSignalFixWeight(sid, sig_struct["universe"],
                                   sig_struct["factors_struct"],
                                   run_mode, bgn_date, stp_date,
                                   signals_dir,
@@ -220,8 +238,8 @@ def cal_signals_mp(
     # --- for dynamics
     pool = mp.Pool(processes=proc_num)
     for sid in sids_dyn:
-        sig_struct = signals_structure[sid]
-        signal = CSignalDynamicWeight(sid, universe,
+        sig_struct = signals_structure["sigDyn"][sid]
+        signal = CSignalDynamicWeight(sid, sig_struct["universe"],
                                       sig_struct["factors"],
                                       run_mode, bgn_date, stp_date,
                                       trn_win, lbd,

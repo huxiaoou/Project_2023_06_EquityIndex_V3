@@ -5,6 +5,7 @@ from project_config import factors, factors_ma, factors_args, test_return_types,
 from project_config import manager_cx_windows
 from project_config import cost_rate
 from struct_lib import database_structure
+from struct_sig import signals_structure
 from project_setup import calendar_path, futures_instru_info_path
 from project_setup import major_minor_dir, major_return_dir, md_by_instru_dir
 from project_setup import futures_md_dir, futures_md_structure_path
@@ -63,6 +64,7 @@ if __name__ == "__main__":
             "preprocess/pub": "20150416",
             "test_returns": "20150416",
             "factor_exposures": "20150416", 
+            
             "factor_exposures_moving_average": "20160615", 
             
             "tests": "20160701", 
@@ -370,9 +372,10 @@ if __name__ == "__main__":
             tests_result_summary_dir=research_gp_tests_summary_dir)
     elif switch in ["SIG"]:
         cal_signals_mp(
-            proc_num=5, sids_fix=[], sids_dyn=[],
-            signals_structure={},
-            universe=instruments_universe,
+            proc_num=5,
+            sids_fix=list(signals_structure["sigFix"].keys()),
+            sids_dyn=list(signals_structure["sigDyn"].keys()),
+            signals_structure=signals_structure,
             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
             trn_win=3, lbd=1000,
             signals_dir=research_signals_dir,
