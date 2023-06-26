@@ -81,6 +81,7 @@ research_ic_tests_summary_dir = os.path.join(research_project_data_dir, "ic_test
 research_gp_tests_summary_dir = os.path.join(research_project_data_dir, "gp_tests_summary")
 research_signals_dir = os.path.join(research_project_data_dir, "signals")
 research_simulations_dir = os.path.join(research_project_data_dir, "simulations")
+research_simulations_summary_dir = os.path.join(research_project_data_dir, "simulations_summary")
 
 if __name__ == "__main__":
     from skyrim.winterhold import check_and_mkdir
@@ -98,5 +99,6 @@ if __name__ == "__main__":
     check_and_mkdir(os.path.join(research_signals_dir, "weights"))
     check_and_mkdir(os.path.join(research_signals_dir, "models"))
     check_and_mkdir(research_simulations_dir)
+    check_and_mkdir(research_simulations_summary_dir)
 
     print("... directory system for this project has been established.")

@@ -13,7 +13,7 @@ from project_setup import futures_md_db_name, futures_em01_db_name
 from project_setup import futures_fundamental_intermediary_dir
 from project_setup import equity_index_by_instrument_dir
 from project_setup import research_test_returns_dir, research_factors_exposure_dir
-from project_setup import research_intermediary_dir, research_signals_dir, research_simulations_dir
+from project_setup import research_intermediary_dir, research_signals_dir, research_simulations_dir, research_simulations_summary_dir
 from project_setup import research_ic_tests_dir, research_ic_tests_summary_dir
 from project_setup import research_gp_tests_dir, research_gp_tests_summary_dir
 
@@ -42,7 +42,7 @@ from tests.ic_tests_summary import cal_ic_tests_summary_mp
 from tests.gp_tests import cal_gp_tests_mp
 from tests.gp_tests_summary import cal_gp_tests_summary_mp
 from tests.gp_tests_corr import cal_gp_tests_corr
-from signals.signals import cal_signals_mp
+from signals.signals import cal_signals_mp, cal_simulations_mp, cal_simulations_summary
 
 if __name__ == "__main__":
     args_parser = argparse.ArgumentParser(description="Entry point of this project")
@@ -383,18 +383,20 @@ if __name__ == "__main__":
             gp_tests_dir=research_gp_tests_dir,
             database_structure=database_structure,
             calendar_path=calendar_path)
-    # elif switch in ["SIMU"]:
-    #     pass
-    #     # cal_simulation_mp(
-    #     #     proc_num=5, sids=["S000", "S001", "S002", "S003", "S004", "S005"], cost_rate=cost_rate,
-    #     #     signals_structure=signals_structure,
-    #     #     universe_options=universe_options,
-    #     #     run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #     #     database_structure=database_structure,
-    #     #     signals_dir=research_signals_dir,
-    #     #     test_returns_dir=research_test_returns_dir,
-    #     #     simulations_dir=research_simulations_dir,
-    #     #     calendar_path=calendar_path,
-    #     # )
+    elif switch in ["SIMU"]:
+        cal_simulations_mp(
+            proc_num=5, sids=["S000", "S001", "S002"],
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            cost_rate=cost_rate,
+            signals_dir=research_signals_dir,
+            test_returns_dir=research_test_returns_dir,
+            simulations_dir=research_simulations_dir,
+            database_structure=database_structure,
+            calendar_path=calendar_path)
+    elif switch in ["SIMUSUM"]:
+        cal_simulations_summary(
+            sids=["S000", "S001", "S002"],
+            simulations_dir=research_simulations_dir,
+            simulations_summary_dir=research_simulations_summary_dir)
     else:
         print("... switch = {} is not a legal option, please check again".format(switch))
