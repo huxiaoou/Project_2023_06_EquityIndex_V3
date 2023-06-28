@@ -1,7 +1,7 @@
 from project_config import instruments_universe
 
 signals_structure = {
-    "sigFix": {
+    "sigFixFMaSyn": {
         "S000": {
             "universe": instruments_universe,
             "factors_struct": (
@@ -95,6 +95,36 @@ signals_structure = {
                 ("TWCV021-M010", 0.0516),
             ), },
     },
+    "sigFixFSynMa": {
+        "S012": {
+            "universe": instruments_universe,
+            "mov_ave_win": 10,
+            "factors_struct": (
+                ("EXR042D3-M001", 0.0699),
+                ("CTP063T10-M001", 0.1910),
+                ("AMPH063T02-M001", 0.0723),
+                ("SKEW126-M001", 0.1829),
+                ("BASIS_D021-M001", 0.1295),
+                ("BETA_D063-M001", 0.1134),
+                ("CTR126T01-M001", 0.0932),
+                ("TS_D252-M001", 0.0751),
+                ("TWCV021-M001", 0.0728),
+            ), },
+        "S013": {
+            "universe": instruments_universe,
+            "mov_ave_win": 10,
+            "factors_struct": (
+                ("EXR042D3-M001", 0.0778),
+                ("CTP063T10-M001", 0.1832),
+                ("AMPH063T02-M001", 0.0752),
+                ("SKEW126-M001", 0.2075),
+                ("BASIS_D021-M001", 0.1041),
+                ("BETA_D063-M001", 0.1006),
+                ("CTR126T01-M001", 0.0848),
+                ("TS_D252-M001", 0.0705),
+                ("TWCV021-M001", 0.0963),
+            ), },
+    },
     "sigDyn": {
         "S100": {
             "universe": instruments_universe,
@@ -113,12 +143,14 @@ signals_structure = {
     }
 }
 
-fix_sids = list(signals_structure["sigFix"].keys())
-dyn_sids = list(signals_structure["sigDyn"].keys())
+sids_fix_f_ma_syn = list(signals_structure["sigFixFMaSyn"].keys())
+sids_fix_f_syn_ma = list(signals_structure["sigFixFSynMa"].keys())
+sids_dyn = list(signals_structure["sigDyn"].keys())
 
 if __name__ == "__main__":
-    print(fix_sids)
-    print(dyn_sids)
+    print(sids_fix_f_syn_ma)
+    print(sids_fix_f_ma_syn)
+    print(sids_dyn)
 
 # CTP063T10-M010     112.8331     11.3592      1.2118      0.1971      0.0956      0.0846
 # EXR042D3-M010      117.6684     11.7986      1.2116      0.1529      0.0471      0.0356

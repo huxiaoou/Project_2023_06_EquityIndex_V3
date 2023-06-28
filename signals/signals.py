@@ -131,7 +131,7 @@ class CSignal(CSignalBase):
         self.m_raw_wgt_df = raw_wgt_df.sort_values(by=["trade_date", "factor"])
         return 0
 
-    def __sumprod_weights(self, daily_fac_instru_df: pd.DataFrame):
+    def _sumprod_weights(self, daily_fac_instru_df: pd.DataFrame):
         pass
 
     def _save(self):
@@ -157,21 +157,43 @@ class CSignalFixWeight(CSignal):
         ws = pd.Series(data=fix_weights, index=factors)
         self.m_fix_weights = ws / ws.abs().sum()
 
-    def __sumprod_weights(self, daily_fac_instru_df: pd.DataFrame):
+    def _sumprod_weights(self, daily_fac_instru_df: pd.DataFrame):
         xt = daily_fac_instru_df.set_index("factor").T
         y = self.m_fix_weights[xt.columns]
         return xt @ y
 
+    def main_cal_sig(self, database_structure: dict[str, CLib1Tab1], factors_exposure_dir: str):
+        self._cal_weight(database_structure, factors_exposure_dir)
+        self._save()
+        return 0
+
+
+class CSignalFixWeightFMaSyn(CSignalFixWeight):
     def _cal_weight(self, database_structure: dict[str, CLib1Tab1], factors_exposure_dir: str):
         super()._cal_weight(database_structure, factors_exposure_dir)
-        sig_grp_df = self.m_raw_wgt_df.groupby(lambda z: z).apply(self.__sumprod_weights)
+        sig_grp_df = self.m_raw_wgt_df.groupby(lambda z: z).apply(self._sumprod_weights)
         sig_nrm_df = sig_grp_df.div(sig_grp_df.abs().sum(axis=1), axis=0).fillna(0)
         self.m_sig_save_df = sig_nrm_df.stack().reset_index(level=1)
         return 0
 
-    def main_cal_sig(self, database_structure: dict[str, CLib1Tab1], factors_exposure_dir: str):
-        self._cal_weight(database_structure, factors_exposure_dir)
-        self._save()
+
+class CSignalFixWeightFSynMa(CSignalFixWeight):
+    def __init__(self, sid: str, universe: list[str], mov_ave_win: int,
+                 factors_struct: tuple[tuple],
+                 run_mode: str, bgn_date: str, stp_date: str | None,
+                 signals_dir: str,
+                 database_structure: dict[str, CLib1Tab1],
+                 calendar_path: str):
+        self.m_mov_ave_win = mov_ave_win
+        super().__init__(sid, universe, factors_struct, run_mode, bgn_date, stp_date, signals_dir, database_structure, calendar_path)
+
+    def _cal_weight(self, database_structure: dict[str, CLib1Tab1], factors_exposure_dir: str):
+        super()._cal_weight(database_structure, factors_exposure_dir)
+        sig_grp_df = self.m_raw_wgt_df.groupby(lambda z: z).apply(self._sumprod_weights)
+        sig_nrm_df = sig_grp_df.div(sig_grp_df.abs().sum(axis=1), axis=0).fillna(0)
+        sig_rol_df = sig_nrm_df.rolling(window=self.m_mov_ave_win).mean()
+        sig_df = sig_rol_df.div(sig_rol_df.abs().sum(axis=1), axis=0).fillna(0)
+        self.m_sig_save_df = sig_df.stack().reset_index(level=1)
         return 0
 
 
@@ -280,7 +302,7 @@ class CSignalDynamicWeight(CSignal):
 
 
 def cal_signals_mp(
-        proc_num: int, sids_fix: list[str], sids_dyn: list[str],
+        proc_num: int, sids_f_ma_syn_fix: list[str], sids_f_syn_ma_fix: list[str], sids_dyn: list[str],
         signals_structure: dict[str, dict],
         run_mode: str, bgn_date: str, stp_date: str | None,
         trn_win: int, lbd: float,
@@ -293,20 +315,27 @@ def cal_signals_mp(
 
     # --- for fix
     pool = mp.Pool(processes=proc_num)
-    for sid in sids_fix:
-        sig_struct = signals_structure["sigFix"][sid]
-        signal = CSignalFixWeight(sid, sig_struct["universe"],
-                                  sig_struct["factors_struct"],
-                                  run_mode, bgn_date, stp_date,
-                                  signals_dir,
-                                  database_structure,
-                                  calendar_path)
+    for sid in sids_f_ma_syn_fix:
+        sig_struct = signals_structure["sigFixFMaSyn"][sid]
+        signal = CSignalFixWeightFMaSyn(sid, sig_struct["universe"],
+                                        sig_struct["factors_struct"],
+                                        run_mode, bgn_date, stp_date,
+                                        signals_dir,
+                                        database_structure,
+                                        calendar_path)
         pool.apply_async(signal.main_cal_sig, args=(database_structure, factors_exposure_dir))
-    pool.close()
-    pool.join()
+
+    for sid in sids_f_syn_ma_fix:
+        sig_struct = signals_structure["sigFixFSynMa"][sid]
+        signal = CSignalFixWeightFSynMa(sid, sig_struct["universe"], sig_struct["mov_ave_win"],
+                                        sig_struct["factors_struct"],
+                                        run_mode, bgn_date, stp_date,
+                                        signals_dir,
+                                        database_structure,
+                                        calendar_path)
+        pool.apply_async(signal.main_cal_sig, args=(database_structure, factors_exposure_dir))
 
     # --- for dynamics
-    pool = mp.Pool(processes=proc_num)
     for sid in sids_dyn:
         sig_struct = signals_structure["sigDyn"][sid]
         signal = CSignalDynamicWeight(sid, sig_struct["universe"],
@@ -318,8 +347,10 @@ def cal_signals_mp(
                                       database_structure,
                                       calendar_path)
         pool.apply_async(signal.main_cal_sig, args=(database_structure, factors_exposure_dir))
+
     pool.close()
     pool.join()
+
     t1 = dt.datetime.now()
     print("... total time consuming: {:.2f} seconds".format((t1 - t0).total_seconds()))
     return 0
