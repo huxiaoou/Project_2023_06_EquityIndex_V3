@@ -198,15 +198,21 @@ class CSignalFixWeightFSynMa(CSignalFixWeight):
 
 
 class CSignalDynamicWeight(CSignal):
-    def __init__(self, sid: str, universe: list[str],
-                 factors: list[str],
+    def __init__(self, sid: str, universe: list[str], mov_ave_win: int, min_model_days: int,
+                 factors_struct: list[str],
                  run_mode: str, bgn_date: str, stp_date: str | None,
                  trn_win: int, lbd: float,
                  signals_dir: str,
                  gp_tests_dir: str,
                  database_structure: dict[str, CLib1Tab1],
                  calendar_path: str):
+        factors, fix_weights = zip(*factors_struct)
+        ws = pd.Series(data=fix_weights, index=factors)
+        self.m_default_weights = ws / ws.abs().sum()
+
         super().__init__(sid, universe, factors, run_mode, bgn_date, stp_date, signals_dir, database_structure, calendar_path)
+        self.m_mov_ave_win = mov_ave_win
+        self.m_min_model_days = min_model_days
         self.m_signals_models_dir = os.path.join(self.m_signals_dir, "models")
         self.m_gp_tests_dir = gp_tests_dir
         self.m_trn_win = trn_win
@@ -236,7 +242,8 @@ class CSignalDynamicWeight(CSignal):
         base_date = min(train_bgn_dates)
         ret_data = {}
         for factor in self.m_factors:
-            test_lib_id = "gp-{}".format(factor)
+            _f = factor.replace("-M001", "-M{:03d}".format(self.m_mov_ave_win))
+            test_lib_id = "gp-{}".format(_f)
             test_lib_structure = database_structure[test_lib_id]
             test_lib = CManagerLibReader(t_db_save_dir=self.m_gp_tests_dir, t_db_name=test_lib_structure.m_lib_name)
             test_lib.set_default(test_lib_structure.m_tab.m_table_name)
@@ -253,27 +260,26 @@ class CSignalDynamicWeight(CSignal):
         for train_end_month, train_bgn_date, train_end_date in self.m_train_dates:
             filter_dates = (self.m_gp_ret_df.index >= train_bgn_date) & (self.m_gp_ret_df.index <= train_end_date)
             ret_df = self.m_gp_ret_df.loc[filter_dates, self.m_factors]
-            if len(ret_df) < 60:
-                k = len(self.m_factors)
-                ws = pd.Series(data=1 / k, index=self.m_factors)
+            if len(ret_df) < self.m_min_model_days:
+                ws = self.m_default_weights
             else:
                 mu, sgm = ret_df.mean(), ret_df.cov()
                 if (r0 := np.linalg.matrix_rank(ret_df)) < (r1 := len(self.m_factors)):
-                    # print(self.m_sid, train_end_month, train_bgn_date, train_end_date, "{}/{}".format(r0, r1))
+                    print(self.m_sid, train_end_month, train_bgn_date, train_end_date, "{}/{}".format(r0, r1))
                     ws = None
                 else:
                     w, _ = minimize_utility(t_mu=mu.values, t_sigma=sgm.values, t_lbd=self.m_lbd)
                     ws = pd.Series(data=w, index=mu.index)
+            self.m_opt_wgt[train_end_date] = ws
 
-            if ws is not None:
-                self.m_opt_wgt[train_end_date] = ws
-                model_save_df = pd.DataFrame({self.m_sid: ws})
-                model_save_file = "{}-{}.csv.gz".format(self.m_sid, train_end_month)
-                model_save_path = os.path.join(self.m_signals_models_dir, train_end_month[0:4], train_end_month, model_save_file)
-                model_save_df.to_csv(model_save_path, index_label="factor", float_format="%.6f")
+            # save model
+            model_save_df = pd.DataFrame({self.m_sid: ws})
+            model_save_file = "{}-{}.csv.gz".format(self.m_sid, train_end_month)
+            model_save_path = os.path.join(self.m_signals_models_dir, train_end_month[0:4], train_end_month, model_save_file)
+            model_save_df.to_csv(model_save_path, index_label="factor", float_format="%.6f")
         return 0
 
-    def __sumprod_weights(self, daily_fac_instru_df: pd.DataFrame):
+    def _sumprod_weights(self, daily_fac_instru_df: pd.DataFrame):
         xt = daily_fac_instru_df.set_index("factor").T
         t = daily_fac_instru_df.index[0]
         y = self.m_opt_wgt_df.loc[t, xt.columns]
@@ -289,9 +295,11 @@ class CSignalDynamicWeight(CSignal):
             how="left"
         ).set_index("trade_date").fillna(method="ffill").shift(1).fillna(method="bfill")
 
-        sig_grp_df = self.m_raw_wgt_df.groupby(lambda z: z).apply(self.__sumprod_weights)
+        sig_grp_df = self.m_raw_wgt_df.groupby(lambda z: z).apply(self._sumprod_weights)
         sig_nrm_df = sig_grp_df.div(sig_grp_df.abs().sum(axis=1), axis=0).fillna(0)
-        self.m_sig_save_df = sig_nrm_df.stack().reset_index(level=1)
+        sig_rol_df = sig_nrm_df.rolling(window=self.m_mov_ave_win).mean()
+        sig_df = sig_rol_df.div(sig_rol_df.abs().sum(axis=1), axis=0).fillna(0)
+        self.m_sig_save_df = sig_df.stack().reset_index(level=1)
         return 0
 
     def main_cal_sig(self, database_structure: dict[str, CLib1Tab1], factors_exposure_dir: str):
@@ -338,8 +346,8 @@ def cal_signals_mp(
     # --- for dynamics
     for sid in sids_dyn:
         sig_struct = signals_structure["sigDyn"][sid]
-        signal = CSignalDynamicWeight(sid, sig_struct["universe"],
-                                      sig_struct["factors"],
+        signal = CSignalDynamicWeight(sid, sig_struct["universe"], sig_struct["mov_ave_win"], sig_struct["min_model_days"],
+                                      sig_struct["factors_struct"],
                                       run_mode, bgn_date, stp_date,
                                       trn_win, lbd,
                                       signals_dir,
@@ -399,7 +407,7 @@ def cal_simulations_summary(sids: list[str],
         nav_data[sid] = simu_df["nav"]
     summary_df = pd.DataFrame.from_dict(summary_data, orient="index")
     summary_df = summary_df[["return_mean", "return_std", "hold_period_return", "annual_return", "annual_volatility", "sharpe_ratio", "calmar_ratio", "max_drawdown_scale"]]
-    print(summary_df)
+    print(summary_df.sort_values("sharpe_ratio", ascending=False))
     summary_file = "simulations-summary.csv"
     summary_path = os.path.join(simulations_summary_dir, summary_file)
     summary_df.to_csv(summary_path, index_label="sid", float_format="%.6f")
