@@ -414,5 +414,5 @@ def cal_simulations_summary(sids: list[str],
 
     top_sids = summary_df.sort_values("sharpe_ratio", ascending=False).head(top_n).index
     top_nav_df = pd.DataFrame(nav_data)[top_sids]
-    plot_lines(t_plot_df=top_nav_df, t_fig_name="top_sharpe", t_save_dir=simulations_summary_dir, t_colormap="jet")
+    plot_lines(t_plot_df=top_nav_df, t_fig_name="equity.top_sharpe", t_save_dir=simulations_summary_dir, t_colormap="jet", t_fig_size=(32, 9))
     return 0
