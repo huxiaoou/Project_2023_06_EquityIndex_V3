@@ -1,19 +1,21 @@
 import argparse
+from struct_lib import database_structure
+
 # from project_config import equity_indexes, mapper_futures_to_index
 # from project_config import instruments_universe
 # from project_config import factors, factors_ma, factors_args, test_return_types, factor_mov_ave_wins
 # from project_config import manager_cx_windows
 # from project_config import cost_rate
-# from struct_lib import database_structure
-from struct_sig import signals_structure, sids_fix_f_ma_syn, sids_fix_f_syn_ma, sids_dyn
+
 # from project_setup import calendar_path, futures_instru_info_path
 # from project_setup import major_minor_dir, major_return_dir, md_by_instru_dir
 # from project_setup import futures_md_dir, futures_md_structure_path
 # from project_setup import futures_md_db_name, futures_em01_db_name
 # from project_setup import futures_fundamental_intermediary_dir
-# from project_setup import equity_index_by_instrument_dir
+#
 # from project_setup import research_test_returns_dir, research_factors_exposure_dir
-from project_setup import research_intermediary_dir, research_signals_dir, research_simulations_dir, research_simulations_summary_dir
+# from project_setup import research_intermediary_dir, research_signals_dir, research_simulations_dir, \
+#     research_simulations_summary_dir
 # from project_setup import research_ic_tests_dir, research_ic_tests_summary_dir
 # from project_setup import research_gp_tests_dir, research_gp_tests_summary_dir
 #
@@ -46,18 +48,18 @@ from signals.signals import cal_signals_mp, cal_simulations_mp, cal_simulations_
 
 if __name__ == "__main__":
     args_parser = argparse.ArgumentParser(description="Entry point of this project")
-    args_parser.add_argument("-w", "--switch", type=str, help="""
+    args_parser.add_argument("--switch", type=str, help="""
         use this to decide which parts to run, available options = {'preprocess', 'test_returns', 'factors_exposure'}
         """)
-    args_parser.add_argument("-f", "--factor", type=str, default="", help="""
+    args_parser.add_argument("--factor", type=str, default="", help="""
         optional, must be provided if switch = {'preprocess', 'factors_exposure'},
         use this to decide which factor, available options = {
         'amp', 'amt', 'basis', 'beta', 'cx', 'exr', 'mtm', 'pos', 'sgm', 'size', 'skew', 'smt', 'to', 'ts', 'twc'}
         """)
-    args_parser.add_argument("-m", "--mode", type=str, choices=("o", "a"), help="""
+    args_parser.add_argument("--mode", type=str, choices=("o", "a"), help="""
         run mode, available options = {'o', 'overwrite', 'a', 'append'}
         """)
-    args_parser.add_argument("-b", "--bgn", type=str, help="""
+    args_parser.add_argument("--bgn", type=str, help="""
         begin date, may be different according to different switches, suggestion of different switch:
         {   
             "preprocess/m01": "20150416",
@@ -75,7 +77,7 @@ if __name__ == "__main__":
             "simusum": "20160701",  # not necessary indeed
         }
         """)
-    args_parser.add_argument("-s", "--stp", type=str, help="""
+    args_parser.add_argument("--stp", type=str, help="""
         stop date, not included, usually it would be the day after the last trade date, such as
         "20230619" if last trade date is "20230616"  
         """)
@@ -89,31 +91,41 @@ if __name__ == "__main__":
     bgn_date, stp_date = args.bgn, args.stp
     proc_num = args.process
 
-    # if switch in ["PP", "PREPROCESS"]:
-    #     if factor == "split":
-    #         split_spot_daily_k(equity_index_by_instrument_dir, equity_indexes)
-    #     elif factor == "m01":
-    #         update_major_minute(run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #                             instruments=instruments_universe, calendar_path=calendar_path,
-    #                             futures_md_structure_path=futures_md_structure_path,
-    #                             futures_em01_db_name=futures_em01_db_name,
-    #                             futures_md_dir=futures_md_dir,
-    #                             major_minor_dir=major_minor_dir,
-    #                             intermediary_dir=research_intermediary_dir,
-    #                             database_structure=database_structure)
-    #     elif factor == "pub":
-    #         for value_type in ["pos", "delta"]:
-    #             update_public_info(value_type=value_type,
-    #                                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #                                instruments=instruments_universe,
-    #                                calendar_path=calendar_path,
-    #                                futures_md_structure_path=futures_md_structure_path,
-    #                                futures_md_db_name=futures_md_db_name,
-    #                                futures_md_dir=futures_md_dir,
-    #                                futures_fundamental_intermediary_dir=futures_fundamental_intermediary_dir,
-    #                                intermediary_dir=research_intermediary_dir,
-    #                                database_structure=database_structure
-    #                                )
+    if switch in ["PP", "PREPROCESS"]:
+        if factor == "split":
+            from preprocess.preprocess import split_spot_daily_k
+            from project_setup import equity_index_by_instrument_dir
+            from project_config import equity_indexes
+
+            split_spot_daily_k(equity_index_by_instrument_dir, equity_indexes)
+        elif factor == "m01":
+            from preprocess.preprocess import update_major_minute
+            from project_setup import calendar_path, futures_md_structure_path, futures_em01_db_name, futures_dir, \
+                futures_by_instru_dir
+            from project_setup import research_intermediary_dir
+            from project_config import instruments_universe
+
+            update_major_minute(run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                                instruments=instruments_universe, calendar_path=calendar_path,
+                                futures_md_structure_path=futures_md_structure_path,
+                                futures_em01_db_name=futures_em01_db_name,
+                                futures_dir=futures_dir,
+                                by_instrument_dir=futures_by_instru_dir,
+                                intermediary_dir=research_intermediary_dir,
+                                database_structure=database_structure)
+        # elif factor == "pub":
+        #     for value_type in ["pos", "delta"]:
+        #         update_public_info(value_type=value_type,
+        #                            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+        #                            instruments=instruments_universe,
+        #                            calendar_path=calendar_path,
+        #                            futures_md_structure_path=futures_md_structure_path,
+        #                            futures_md_db_name=futures_md_db_name,
+        #                            futures_md_dir=futures_md_dir,
+        #                            futures_fundamental_intermediary_dir=futures_fundamental_intermediary_dir,
+        #                            intermediary_dir=research_intermediary_dir,
+        #                            database_structure=database_structure
+        #                            )
     # elif switch in ["TR", "TEST_RETURNS"]:
     #     cal_test_returns_mp(
     #         proc_num=proc_num,
@@ -419,11 +431,13 @@ if __name__ == "__main__":
     #         simulations_dir=research_simulations_dir,
     #         database_structure=database_structure,
     #         calendar_path=calendar_path)
-    # elif switch in ["SIMUSUM"]:
-    if switch in ["SIMUSUM"]:
+    elif switch in ["SIMUSUM"]:
+        from struct_sig import signals_structure, sids_fix_f_ma_syn, sids_fix_f_syn_ma, sids_dyn
+        from project_setup import research_simulations_dir, research_simulations_summary_dir
+
         cal_simulations_summary(
             sids=sids_fix_f_ma_syn + sids_fix_f_syn_ma + sids_dyn,
             simulations_dir=research_simulations_dir,
             simulations_summary_dir=research_simulations_summary_dir)
     else:
-        print("... switch = {} is not a legal option, please check again".format(switch))
+        raise ValueError(f"... switch = {switch} is not a legal option, please check again")

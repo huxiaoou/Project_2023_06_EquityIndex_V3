@@ -41,13 +41,14 @@ calendar_dir = os.path.join(project_data_root_dir, global_config["calendar"]["di
 calendar_path = os.path.join(calendar_dir, global_config["calendar"]["file"])
 
 # --- futures data
-# futures_dir = os.path.join(project_data_root_dir, global_config["futures"]["dir"])
-# futures_instru_info_path = os.path.join(futures_dir, global_config["futures"]["instrument_info_file"])
-#
-# futures_md_dir = os.path.join(futures_dir, global_config["futures"]["md_dir"])
-# futures_md_structure_path = os.path.join(futures_md_dir, global_config["futures"]["md_structure_file"])
-# futures_md_db_name = global_config["futures"]["md_db_name"]
-# futures_em01_db_name = global_config["futures"]["em01_db_name"]
+futures_dir = os.path.join(project_data_root_dir, global_config["futures"]["dir"])
+futures_instru_info_path = os.path.join(futures_dir, global_config["futures"]["instrument_info_file"])
+
+futures_by_instru_dir = os.path.join(futures_dir, global_config["futures"]["by_instrument"]["dir"])
+futures_md_dir = os.path.join(futures_dir, global_config["futures"]["by_instrument"]["md"]["dir"])
+futures_md_structure_path = os.path.join(futures_dir, global_config["futures"]["db_struct_file"])
+futures_md_db_name = global_config["futures"]["md"]["wds_db"]
+futures_em01_db_name = global_config["futures"]["md"]["em01_db"]
 #
 # futures_fundamental_dir = os.path.join(futures_dir, global_config["futures"]["fundamental_dir"])
 # futures_fundamental_structure_path = os.path.join(futures_fundamental_dir, global_config["futures"]["fundamental_structure_file"])
@@ -59,10 +60,10 @@ calendar_path = os.path.join(calendar_dir, global_config["calendar"]["file"])
 # major_return_dir = os.path.join(futures_by_instrument_dir, global_config["futures"]["major_return_dir"])
 # md_by_instru_dir = os.path.join(futures_by_instrument_dir, global_config["futures"]["md_by_instru_dir"])
 #
-# # --- equity
-# equity_dir = os.path.join(project_data_root_dir, global_config["equity"]["equity_save_dir"])
-# equity_by_instrument_dir = os.path.join(equity_dir, global_config["equity"]["by_instrument_dir"])
-# equity_index_by_instrument_dir = os.path.join(equity_by_instrument_dir, global_config["equity"]["index_dir"])
+# --- equity
+equity_dir = os.path.join(project_data_root_dir, global_config["equity"]["dir"])
+equity_by_instrument_dir = os.path.join(equity_dir, global_config["equity"]["dir_by_instrument"])
+equity_index_by_instrument_dir = os.path.join(equity_by_instrument_dir, global_config["equity"]["index_dir"])
 
 # --- projects
 projects_dir = os.path.join(deploy_dir, global_config["projects"]["projects_save_dir"])

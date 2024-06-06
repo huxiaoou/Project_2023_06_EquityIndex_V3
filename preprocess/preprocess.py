@@ -3,6 +3,7 @@ import sys
 import json
 import datetime as dt
 import pandas as pd
+from rich.progress import track
 from skyrim.whiterun import CCalendar
 from skyrim.falkreath import CManagerLibReader, CTable
 from skyrim.falkreath import CManagerLibWriter
@@ -27,8 +28,8 @@ def update_major_minute(
         calendar_path: str,
         futures_md_structure_path: str,
         futures_em01_db_name: str,
-        futures_md_dir: str,
-        major_minor_dir: str,
+        futures_dir: str,
+        by_instrument_dir: str,
         intermediary_dir: str,
         database_structure: dict,
 ):
@@ -40,17 +41,20 @@ def update_major_minute(
 
     # --- majors manager
     major_minor_manager = {}
+    major_minor_lib_reader = CManagerLibReader(by_instrument_dir, "major_minor.db")
     for instrument in instruments:
-        major_minor_file = "major_minor.{}.csv.gz".format(instrument)
-        major_minor_path = os.path.join(major_minor_dir, major_minor_file)
-        major_minor_df = pd.read_csv(major_minor_path, dtype=str).set_index("trade_date")
+        major_minor_df = major_minor_lib_reader.read(
+            t_value_columns=["trade_date", "n_contract", "d_contract"],
+            t_using_default_table=False,
+            t_table_name=instrument.replace(".", "_"),
+        ).set_index("trade_date")
         major_minor_manager[instrument] = major_minor_df
 
     # --- init lib reader
     with open(futures_md_structure_path, "r") as j:
         em01_table_struct = json.load(j)[futures_em01_db_name]["CTable"]
     em01_table = CTable(t_table_struct=em01_table_struct)
-    em01_lib = CManagerLibReader(t_db_save_dir=futures_md_dir, t_db_name=futures_em01_db_name + ".db")
+    em01_lib = CManagerLibReader(t_db_save_dir=futures_dir, t_db_name=futures_em01_db_name)
     em01_lib.set_default(em01_table.m_table_name)
     em01_cols = list(em01_table.m_primary_keys) + list(em01_table.m_value_columns)
 
@@ -60,11 +64,13 @@ def update_major_minute(
         t_db_name=em01_major_lib_structure.m_lib_name,
         t_db_save_dir=intermediary_dir
     )
-    em01_major_lib.initialize_table(t_table=em01_major_lib_structure.m_tab, t_remove_existence=run_mode in ["O", "OVERWRITE"])
+    em01_major_lib.initialize_table(t_table=em01_major_lib_structure.m_tab,
+                                    t_remove_existence=run_mode in ["O", "OVERWRITE"])
 
     # --- main loop
     dfs_list = []
-    for trade_date in calendar.get_iter_list(bgn_date, stp_date, True):
+    iter_dates = calendar.get_iter_list(bgn_date, stp_date, True)
+    for trade_date in track(iter_dates, description="[INF] Getting major m01 ..."):
         theory_number_of_bars = 270 if trade_date < "20160101" else 240
         for instrument in instruments:
             try:
@@ -78,9 +84,13 @@ def update_major_minute(
                     ("trade_date", "=", trade_date),
                     ("loc_id", "=", major_contract),
                 ], t_value_columns=em01_cols)
+            major_contract_m01_df = major_contract_m01_df.dropna(
+                axis=0, how="all", subset=["open", "high", "low", "close"]
+            )
             if (num_of_bars := len(major_contract_m01_df)) != theory_number_of_bars:
-                print("Error! Number of bars = {} @ {} for {} - {}, theory = {}".format(
-                    num_of_bars, trade_date, instrument, major_contract, theory_number_of_bars))
+                print(
+                    f"Error! Number of bars = {num_of_bars} @ {trade_date} for {instrument} - {major_contract}, theory = {theory_number_of_bars}"
+                )
                 sys.exit()
             dfs_list.append(major_contract_m01_df)
 
