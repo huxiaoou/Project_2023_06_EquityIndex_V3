@@ -1,21 +1,27 @@
-import os
 import json
 import datetime as dt
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
+from rich.progress import track
 from skyrim.whiterun import CCalendar
 from skyrim.falkreath import CTable, CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriterByDate
 
 
+def error_handler(error):
+    print(f"'Error': {error}", flush=True)
+    return -1
+
+
 def lookup_av_ratio(db: CManagerLibReader, date: str, contract: str, ret_type: str):
     _s, _d = (0, 1) if ret_type == "o" else (-1, -1)
     m01_df = db.read_by_date(
         t_trade_date=date,
-        t_value_columns=["loc_id", "amount", "volume"]
+        t_value_columns=["loc_id", "open", "high", "low", "close", "amount", "volume"]
     ).set_index("loc_id")
+    m01_df = m01_df.dropna(axis=0, how="all", subset=["open", "high", "low", "close"])
     try:
         i = 0
         while (v := m01_df.at[contract, "volume"].iloc[_s + _d * i]) == 0:
@@ -35,8 +41,8 @@ def cal_test_returns_for_test_window(
         instruments_universe: list[str],
         database_structure: dict[str, CLib1Tab1],
         test_returns_dir: str,
-        major_minor_dir: str,
-        futures_md_dir: str,
+        by_instrument_dir: str,
+        futures_dir: str,
         calendar_path: str,
         futures_md_structure_path: str,
         futures_em01_db_name: str,
@@ -51,8 +57,8 @@ def cal_test_returns_for_test_window(
     :param instruments_universe:
     :param database_structure:
     :param test_returns_dir:
-    :param major_minor_dir:
-    :param futures_md_dir:
+    :param by_instrument_dir:
+    :param futures_dir:
     :param calendar_path:
     :param futures_md_structure_path:
     :param futures_em01_db_name:
@@ -65,24 +71,33 @@ def cal_test_returns_for_test_window(
 
     # --- init major contracts
     major_minor_manager = {}
+    major_minor_lib_reader = CManagerLibReader(by_instrument_dir, "major_minor.db")
     for instrument in instruments_universe:
-        major_minor_file = "major_minor.{}.csv.gz".format(instrument)
-        major_minor_path = os.path.join(major_minor_dir, major_minor_file)
-        major_minor_df = pd.read_csv(major_minor_path, dtype=str).set_index("trade_date")
+        major_minor_df = major_minor_lib_reader.read(
+            t_value_columns=["trade_date", "n_contract", "d_contract"],
+            t_using_default_table=False,
+            t_table_name=instrument.replace(".", "_"),
+        ).set_index("trade_date")
         major_minor_manager[instrument] = major_minor_df
 
     # --- init lib reader
     with open(futures_md_structure_path, "r") as j:
         m01_table_struct = json.load(j)[futures_em01_db_name]["CTable"]
     m01_table = CTable(t_table_struct=m01_table_struct)
-    m01_db = CManagerLibReader(t_db_save_dir=futures_md_dir, t_db_name=futures_em01_db_name + ".db")
+    m01_db = CManagerLibReader(t_db_save_dir=futures_dir, t_db_name=futures_em01_db_name)
     m01_db.set_default(m01_table.m_table_name)
 
     # --- init lib writer
-    test_return_lib_id = "test_return_{}".format(test_return_type)
+    test_return_lib_id = f"test_return_{test_return_type}"
     test_return_lib_struct = database_structure[test_return_lib_id]
-    test_return_lib = CManagerLibWriterByDate(t_db_save_dir=test_returns_dir, t_db_name=test_return_lib_struct.m_lib_name)
-    test_return_lib.initialize_table(t_table=test_return_lib_struct.m_tab, t_remove_existence=run_mode in ["O", "OVERWRITE"])
+    test_return_lib = CManagerLibWriterByDate(
+        t_db_save_dir=test_returns_dir,
+        t_db_name=test_return_lib_struct.m_lib_name,
+    )
+    test_return_lib.initialize_table(
+        t_table=test_return_lib_struct.m_tab,
+        t_remove_existence=run_mode in ["O", "OVERWRITE"],
+    )
 
     # --- main loop
     test_return_data = []
@@ -92,9 +107,11 @@ def cal_test_returns_for_test_window(
         calendar.get_next_date(iter_end_dates[-1], -_test_window + 1),
         True
     )
-    for test_bgn_date, test_end_date in zip(iter_bgn_dates, iter_end_dates):
+    iter_dates_pair = list(zip(iter_bgn_dates, iter_end_dates))
+    for test_bgn_date, test_end_date in track(iter_dates_pair, description=f"[INF] Test return {test_return_type}"):
         for instrument in instruments_universe:
-            instru_major_contract = major_minor_manager[instrument].at[test_end_date, "n_contract"]  # format like = "IC2305.CFE"
+            instru_major_contract = major_minor_manager[instrument].at[
+                test_end_date, "n_contract"]  # format like = "IC2305.CFE"
             test_bgn_av_ratio = lookup_av_ratio(m01_db, test_bgn_date, instru_major_contract, test_return_type)
             test_end_av_ratio = lookup_av_ratio(m01_db, test_end_date, instru_major_contract, test_return_type)
             test_return_data.append({
@@ -105,7 +122,6 @@ def cal_test_returns_for_test_window(
         if run_mode in ["A", "APPEND"]:
             test_return_lib.delete_by_date(t_date=test_end_date)
     test_return_df = pd.DataFrame(test_return_data).sort_values(by=["trade_date", "instrument"])
-
     test_return_lib.update(t_update_df=test_return_df)
     test_return_lib.close()
     m01_db.close()
@@ -125,7 +141,8 @@ def cal_test_returns_mp(
         pool.apply_async(
             cal_test_returns_for_test_window,
             args=(test_return_type, run_mode, bgn_date, stp_date),
-            kwds=kwargs
+            kwds=kwargs,
+            error_callback=error_handler,
         )
     pool.close()
     pool.join()

@@ -66,12 +66,9 @@ if __name__ == "__main__":
             "preprocess/pub": "20150416",
             "test_returns": "20150416",
             "factor_exposures": "20150416", 
-            
             "factor_exposures_moving_average": "20160615", 
-            
             "tests": "20160701", 
             "tests_summary": "20160701", 
-            
             "signals": "20160627", 
             "simu": "20160701", 
             "simusum": "20160701",  # not necessary indeed
@@ -91,7 +88,7 @@ if __name__ == "__main__":
     bgn_date, stp_date = args.bgn, args.stp
     proc_num = args.process
 
-    if switch in ["PP", "PREPROCESS"]:
+    if switch in ["PREPROCESS"]:
         if factor == "split":
             from preprocess.preprocess import split_spot_daily_k
             from project_setup import equity_index_by_instrument_dir
@@ -134,20 +131,25 @@ if __name__ == "__main__":
                                    intermediary_dir=research_intermediary_dir,
                                    database_structure=database_structure
                                    )
-    # elif switch in ["TR", "TEST_RETURNS"]:
-    #     cal_test_returns_mp(
-    #         proc_num=proc_num,
-    #         test_return_types=test_return_types,
-    #         run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #         instruments_universe=instruments_universe,
-    #         database_structure=database_structure,
-    #         test_returns_dir=research_test_returns_dir,
-    #         major_minor_dir=major_minor_dir,
-    #         futures_md_dir=futures_md_dir,
-    #         calendar_path=calendar_path,
-    #         futures_md_structure_path=futures_md_structure_path,
-    #         futures_em01_db_name=futures_em01_db_name,
-    #     )
+    elif switch in ["TEST_RETURNS"]:
+        from project_setup import (research_test_returns_dir, calendar_path, futures_dir, futures_by_instru_dir,
+                                   futures_md_structure_path, futures_em01_db_name)
+        from project_config import instruments_universe, test_return_types
+        from test_returns.test_returns import cal_test_returns_mp
+
+        cal_test_returns_mp(
+            proc_num=proc_num,
+            test_return_types=test_return_types,
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            instruments_universe=instruments_universe,
+            database_structure=database_structure,
+            test_returns_dir=research_test_returns_dir,
+            by_instrument_dir=futures_by_instru_dir,
+            futures_dir=futures_dir,
+            calendar_path=calendar_path,
+            futures_md_structure_path=futures_md_structure_path,
+            futures_em01_db_name=futures_em01_db_name,
+        )
     # elif switch in ["FE", "FACTORS_EXPOSURE"]:
     #     if factor == "amp":
     #         cal_fac_exp_amp_mp(
