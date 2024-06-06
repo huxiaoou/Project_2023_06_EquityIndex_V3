@@ -2,7 +2,7 @@ import datetime as dt
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
-from skyrim.whiterun import CCalendar
+from skyrim.whiterun import CCalendar, error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriter
@@ -122,7 +122,9 @@ def cal_fac_exp_exr_mp(proc_num: int,
                                database_structure,
                                factors_exposure_dir,
                                intermediary_dir,
-                               calendar_path))
+                               calendar_path),
+                         error_callback=error_handler,
+                         )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()

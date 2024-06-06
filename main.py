@@ -165,17 +165,19 @@ if __name__ == "__main__":
                 mapper_fut_to_idx=mapper_futures_to_index,
                 equity_index_by_instrument_dir=equity_index_by_instrument_dir
             )
-    #     elif factor == "amt":
-    #         cal_fac_exp_amt_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             amt_windows=factors_args["amt_windows"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             major_return_dir=major_return_dir,
-    #             factors_exposure_dir=research_factors_exposure_dir,
-    #             money_scale=10000
-    #         )
+        elif factor == "amt":
+            from algs.factor_exposure_amt import cal_fac_exp_amt_mp
+
+            cal_fac_exp_amt_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                amt_windows=factors_args["amt_windows"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                by_instrument_dir=futures_by_instru_dir,
+                factors_exposure_dir=research_factors_exposure_dir,
+                money_scale=10000
+            )
     #     elif factor == "basis":
     #         cal_fac_exp_basis_mp(
     #             proc_num=proc_num,

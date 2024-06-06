@@ -4,6 +4,7 @@ import itertools as ittl
 import multiprocessing as mp
 import sys
 import pandas as pd
+from skyrim.whiterun import error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibWriter
 
@@ -110,7 +111,9 @@ def cal_fac_exp_cx_mp(proc_num: int,
                                    instruments_universe,
                                    database_structure,
                                    major_return_dir,
-                                   factors_exposure_dir))
+                                   factors_exposure_dir),
+                             error_callback=error_handler,
+                             )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()

@@ -2,7 +2,7 @@ import datetime as dt
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
-from skyrim.whiterun import CCalendar
+from skyrim.whiterun import CCalendar, error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriter
@@ -68,10 +68,12 @@ def fac_exp_alg_twc(
         twcu_srs, twcd_srs, twct_srs, twcv_srs = zip(*res_srs)
 
         for _iter_data, _iter_dfs, _iter_factor_lbl in zip([twcu_srs, twcd_srs, twct_srs, twcv_srs],
-                                                           [all_factor_u_dfs, all_factor_d_dfs, all_factor_t_dfs, all_factor_v_dfs],
+                                                           [all_factor_u_dfs, all_factor_d_dfs, all_factor_t_dfs,
+                                                            all_factor_v_dfs],
                                                            [factor_u_lbl, factor_d_lbl, factor_t_lbl, factor_v_lbl]):
             _iter_srs = pd.Series(data=_iter_data, index=res_srs.index).rolling(window=twc_window).mean()
-            factor_df = pd.DataFrame({"instrument": instrument, _iter_factor_lbl: _iter_srs[_iter_srs.index >= bgn_date]})
+            factor_df = pd.DataFrame(
+                {"instrument": instrument, _iter_factor_lbl: _iter_srs[_iter_srs.index >= bgn_date]})
             _iter_dfs.append(factor_df[["instrument", _iter_factor_lbl]])
 
     for _iter_dfs, _iter_factor_lbl in zip([all_factor_u_dfs, all_factor_d_dfs, all_factor_t_dfs, all_factor_v_dfs],
@@ -86,7 +88,8 @@ def fac_exp_alg_twc(
             t_db_name=factor_lib_structure.m_lib_name,
             t_db_save_dir=factors_exposure_dir
         )
-        factor_lib.initialize_table(t_table=factor_lib_structure.m_tab, t_remove_existence=run_mode in ["O", "OVERWRITE"])
+        factor_lib.initialize_table(t_table=factor_lib_structure.m_tab,
+                                    t_remove_existence=run_mode in ["O", "OVERWRITE"])
         factor_lib.update(t_update_df=all_factor_df, t_using_index=True)
         factor_lib.close()
 
@@ -112,7 +115,9 @@ def cal_fac_exp_twc_mp(proc_num: int,
                                database_structure,
                                factors_exposure_dir,
                                intermediary_dir,
-                               calendar_path))
+                               calendar_path),
+                         error_callback=error_handler,
+                         )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()

@@ -3,7 +3,7 @@ import itertools as ittl
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
-from skyrim.whiterun import CCalendar, CInstrumentInfoTable
+from skyrim.whiterun import CCalendar, CInstrumentInfoTable, error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriter
@@ -136,7 +136,9 @@ def cal_fac_exp_smt_mp(proc_num: int,
                                intermediary_dir,
                                calendar_path,
                                futures_instru_info_path,
-                               amount_scale))
+                               amount_scale),
+                         error_callback=error_handler,
+                         )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()

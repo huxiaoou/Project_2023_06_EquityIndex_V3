@@ -5,7 +5,7 @@ import pandas as pd
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriter
-from skyrim.whiterun import CCalendar
+from skyrim.whiterun import CCalendar, error_handler
 
 
 def fac_exp_alg_beta(
@@ -147,7 +147,9 @@ def cal_fac_exp_beta_mp(proc_num: int,
                                database_structure,
                                major_return_dir,
                                equity_index_by_instrument_dir,
-                               factors_exposure_dir))
+                               factors_exposure_dir),
+                         error_callback=error_handler,
+                         )
     pool.close()
     pool.join()
     pool = mp.Pool(processes=proc_num)
@@ -157,7 +159,9 @@ def cal_fac_exp_beta_mp(proc_num: int,
                                instruments_universe,
                                calendar_path,
                                database_structure,
-                               factors_exposure_dir))
+                               factors_exposure_dir),
+                         error_callback=error_handler,
+                         )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()

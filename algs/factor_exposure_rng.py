@@ -2,6 +2,7 @@ import os
 import datetime as dt
 import multiprocessing as mp
 import pandas as pd
+from skyrim.whiterun import error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibWriter
 
@@ -23,7 +24,8 @@ def fac_exp_alg_rng(
         major_return_file = "major_return.{}.close.csv.gz".format(instrument)
         major_return_path = os.path.join(major_return_dir, major_return_file)
         major_return_df = pd.read_csv(major_return_path, dtype={"trade_date": str}).set_index("trade_date")
-        major_return_df[factor_lbl] = (major_return_df["high"] / major_return_df["low"] - 1).rolling(window=rng_window).mean()
+        major_return_df[factor_lbl] = (major_return_df["high"] / major_return_df["low"] - 1).rolling(
+            window=rng_window).mean()
         filter_dates = (major_return_df.index >= bgn_date) & (major_return_df.index < stp_date)
         factor_df = major_return_df.loc[filter_dates, [factor_lbl]].copy()
         factor_df["instrument"] = instrument
@@ -63,7 +65,9 @@ def cal_fac_exp_rng_mp(proc_num: int,
                                instruments_universe,
                                database_structure,
                                major_return_dir,
-                               factors_exposure_dir))
+                               factors_exposure_dir),
+                         error_callback=error_handler,
+                         )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()

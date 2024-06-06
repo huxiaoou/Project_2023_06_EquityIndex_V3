@@ -3,6 +3,7 @@ import datetime as dt
 import itertools as ittl
 import multiprocessing as mp
 import pandas as pd
+from skyrim.whiterun import error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibWriter
 
@@ -24,7 +25,8 @@ def fac_exp_alg_mtm(
         major_return_file = "major_return.{}.close.csv.gz".format(instrument)
         major_return_path = os.path.join(major_return_dir, major_return_file)
         major_return_df = pd.read_csv(major_return_path, dtype={"trade_date": str}).set_index("trade_date")
-        major_return_df[factor_lbl] = major_return_df["instru_idx"] / major_return_df["instru_idx"].shift(mtm_window) - 1
+        major_return_df[factor_lbl] = major_return_df["instru_idx"] / major_return_df["instru_idx"].shift(
+            mtm_window) - 1
         if tag_adj:
             major_return_df["volatility"] = major_return_df["major_return"].rolling(mtm_window).std()
             major_return_df[factor_lbl] = major_return_df[factor_lbl] / major_return_df["volatility"] * (252 ** 0.5)
@@ -67,7 +69,9 @@ def cal_fac_exp_mtm_mp(proc_num: int,
                                instruments_universe,
                                database_structure,
                                major_return_dir,
-                               factors_exposure_dir))
+                               factors_exposure_dir),
+                         error_callback=error_handler,
+                         )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()

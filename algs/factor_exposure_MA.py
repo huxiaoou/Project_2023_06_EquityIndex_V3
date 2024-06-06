@@ -3,7 +3,7 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
-from skyrim.whiterun import CCalendar
+from skyrim.whiterun import CCalendar, error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriter
@@ -104,6 +104,7 @@ def cal_fac_exp_MA_mp(
                   database_structure,
                   factors_exposure_dir,
                   calendar_path),
+            error_callback=error_handler,
         )
     pool.close()
     pool.join()

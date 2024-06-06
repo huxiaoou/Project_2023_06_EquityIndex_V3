@@ -1,7 +1,7 @@
 import datetime as dt
 import multiprocessing as mp
 import pandas as pd
-from skyrim.whiterun import CCalendar
+from skyrim.whiterun import CCalendar, error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriter
@@ -88,22 +88,34 @@ def fac_exp_alg_pos(
             test_return = test_return_df.at[(trade_date, instrument), "value"]
             if test_return > 0:
                 try:
-                    hl_smart_players = drop_values_from_series(hl_df.loc[model_date, hl_nan_indicator.loc[model_date]]).sort_values(ascending=False).head(top_player_qty).index
-                    hs_smart_players = drop_values_from_series(hs_df.loc[model_date, hs_nan_indicator.loc[model_date]]).sort_values(ascending=False).tail(top_player_qty).index
-                    dl_smart_players = dl_df.loc[model_date, dl_nan_indicator.loc[model_date]].sort_values(ascending=False).head(top_player_qty).index
-                    ds_smart_players = ds_df.loc[model_date, ds_nan_indicator.loc[model_date]].sort_values(ascending=False).tail(top_player_qty).index
+                    hl_smart_players = drop_values_from_series(
+                        hl_df.loc[model_date, hl_nan_indicator.loc[model_date]]).sort_values(ascending=False).head(
+                        top_player_qty).index
+                    hs_smart_players = drop_values_from_series(
+                        hs_df.loc[model_date, hs_nan_indicator.loc[model_date]]).sort_values(ascending=False).tail(
+                        top_player_qty).index
+                    dl_smart_players = dl_df.loc[model_date, dl_nan_indicator.loc[model_date]].sort_values(
+                        ascending=False).head(top_player_qty).index
+                    ds_smart_players = ds_df.loc[model_date, ds_nan_indicator.loc[model_date]].sort_values(
+                        ascending=False).tail(top_player_qty).index
                 except KeyError:
                     hl_smart_players, hs_smart_players, dl_smart_players, ds_smart_players = [], [], [], []
-                    print("... {} @ {} top = {} position data are not found".format(instrument, model_date, top_player_qty))
+                    print("... {} @ {} top = {} position data are not found".format(instrument, model_date,
+                                                                                    top_player_qty))
             elif test_return < 0:
                 try:
-                    hl_smart_players = hl_df.loc[model_date, hl_nan_indicator.loc[model_date]].sort_values(ascending=False).tail(top_player_qty).index
-                    hs_smart_players = hs_df.loc[model_date, hs_nan_indicator.loc[model_date]].sort_values(ascending=False).head(top_player_qty).index
-                    dl_smart_players = dl_df.loc[model_date, dl_nan_indicator.loc[model_date]].sort_values(ascending=False).tail(top_player_qty).index
-                    ds_smart_players = ds_df.loc[model_date, ds_nan_indicator.loc[model_date]].sort_values(ascending=False).head(top_player_qty).index
+                    hl_smart_players = hl_df.loc[model_date, hl_nan_indicator.loc[model_date]].sort_values(
+                        ascending=False).tail(top_player_qty).index
+                    hs_smart_players = hs_df.loc[model_date, hs_nan_indicator.loc[model_date]].sort_values(
+                        ascending=False).head(top_player_qty).index
+                    dl_smart_players = dl_df.loc[model_date, dl_nan_indicator.loc[model_date]].sort_values(
+                        ascending=False).tail(top_player_qty).index
+                    ds_smart_players = ds_df.loc[model_date, ds_nan_indicator.loc[model_date]].sort_values(
+                        ascending=False).head(top_player_qty).index
                 except KeyError:
                     hl_smart_players, hs_smart_players, dl_smart_players, ds_smart_players = [], [], [], []
-                    print("... {} @ {} top = {} position data are not found".format(instrument, model_date, top_player_qty))
+                    print("... {} @ {} top = {} position data are not found".format(instrument, model_date,
+                                                                                    top_player_qty))
             else:
                 hl_smart_players, hs_smart_players, dl_smart_players, ds_smart_players = [], [], [], []
             hl_prediction = hl_df.loc[trade_date, hl_smart_players].mean()
@@ -114,8 +126,10 @@ def fac_exp_alg_pos(
             r_dl_data[trade_date], r_ds_data[trade_date] = -dl_prediction, -ds_prediction
 
         for _iter_data, _iter_dfs, _iter_factor_lbl in zip([r_hl_data, r_hs_data, r_dl_data, r_ds_data],
-                                                           [all_factor_hl_dfs, all_factor_hs_dfs, all_factor_dl_dfs, all_factor_ds_dfs],
-                                                           [factor_hl_lbl, factor_hs_lbl, factor_dl_lbl, factor_ds_lbl]):
+                                                           [all_factor_hl_dfs, all_factor_hs_dfs, all_factor_dl_dfs,
+                                                            all_factor_ds_dfs],
+                                                           [factor_hl_lbl, factor_hs_lbl, factor_dl_lbl,
+                                                            factor_ds_lbl]):
             factor_df = pd.DataFrame({"instrument": instrument, _iter_factor_lbl: pd.Series(_iter_data)})
             _iter_dfs.append(factor_df[["instrument", _iter_factor_lbl]])
 
@@ -131,7 +145,8 @@ def fac_exp_alg_pos(
             t_db_name=factor_lib_structure.m_lib_name,
             t_db_save_dir=factors_exposure_dir
         )
-        factor_lib.initialize_table(t_table=factor_lib_structure.m_tab, t_remove_existence=run_mode in ["O", "OVERWRITE"])
+        factor_lib.initialize_table(t_table=factor_lib_structure.m_tab,
+                                    t_remove_existence=run_mode in ["O", "OVERWRITE"])
         factor_lib.update(t_update_df=all_factor_df, t_using_index=True)
         factor_lib.close()
 
@@ -162,7 +177,9 @@ def cal_fac_exp_pos_mp(proc_num: int,
                                factors_exposure_dir,
                                test_returns_dir,
                                intermediary_dir,
-                               calendar_path))
+                               calendar_path),
+                         error_callback=error_handler,
+                         )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()

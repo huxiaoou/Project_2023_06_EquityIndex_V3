@@ -2,6 +2,7 @@ import os
 import datetime as dt
 import multiprocessing as mp
 import pandas as pd
+from skyrim.whiterun import error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibWriter
 
@@ -63,7 +64,9 @@ def cal_fac_exp_skew_mp(proc_num: int,
                                instruments_universe,
                                database_structure,
                                major_return_dir,
-                               factors_exposure_dir))
+                               factors_exposure_dir),
+                         error_callback=error_handler,
+                         )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()
