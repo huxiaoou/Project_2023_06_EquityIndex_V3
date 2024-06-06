@@ -100,8 +100,9 @@ if __name__ == "__main__":
             split_spot_daily_k(equity_index_by_instrument_dir, equity_indexes)
         elif factor == "m01":
             from preprocess.preprocess import update_major_minute
-            from project_setup import calendar_path, futures_md_structure_path, futures_em01_db_name, futures_dir, \
-                futures_by_instru_dir
+            from project_setup import (calendar_path, futures_dir,
+                                       futures_md_structure_path, futures_em01_db_name,
+                                       futures_by_instru_dir)
             from project_setup import research_intermediary_dir
             from project_config import instruments_universe
 
@@ -113,19 +114,26 @@ if __name__ == "__main__":
                                 by_instrument_dir=futures_by_instru_dir,
                                 intermediary_dir=research_intermediary_dir,
                                 database_structure=database_structure)
-        # elif factor == "pub":
-        #     for value_type in ["pos", "delta"]:
-        #         update_public_info(value_type=value_type,
-        #                            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-        #                            instruments=instruments_universe,
-        #                            calendar_path=calendar_path,
-        #                            futures_md_structure_path=futures_md_structure_path,
-        #                            futures_md_db_name=futures_md_db_name,
-        #                            futures_md_dir=futures_md_dir,
-        #                            futures_fundamental_intermediary_dir=futures_fundamental_intermediary_dir,
-        #                            intermediary_dir=research_intermediary_dir,
-        #                            database_structure=database_structure
-        #                            )
+        elif factor == "pub":
+            from preprocess.preprocess import update_public_info
+            from project_setup import (calendar_path, futures_dir,
+                                       futures_md_structure_path, futures_md_db_name,
+                                       futures_by_date_dir)
+            from project_setup import research_intermediary_dir
+            from project_config import instruments_universe
+
+            for value_type in ["pos", "delta"]:
+                update_public_info(value_type=value_type,
+                                   run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                                   instruments=instruments_universe,
+                                   calendar_path=calendar_path,
+                                   futures_md_structure_path=futures_md_structure_path,
+                                   futures_md_db_name=futures_md_db_name,
+                                   futures_dir=futures_dir,
+                                   futures_by_date_dir=futures_by_date_dir,
+                                   intermediary_dir=research_intermediary_dir,
+                                   database_structure=database_structure
+                                   )
     # elif switch in ["TR", "TEST_RETURNS"]:
     #     cal_test_returns_mp(
     #         proc_num=proc_num,

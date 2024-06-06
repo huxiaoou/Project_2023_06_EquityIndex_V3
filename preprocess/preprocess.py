@@ -110,8 +110,8 @@ def update_public_info(
         calendar_path: str,
         futures_md_structure_path,
         futures_md_db_name,
-        futures_md_dir: str,
-        futures_fundamental_intermediary_dir,
+        futures_dir: str,
+        futures_by_date_dir,
         intermediary_dir: str,
         database_structure: dict,
 ):
@@ -125,8 +125,8 @@ def update_public_info(
     :param calendar_path:
     :param futures_md_structure_path:
     :param futures_md_db_name:
-    :param futures_md_dir:
-    :param futures_fundamental_intermediary_dir:
+    :param futures_dir:
+    :param futures_by_date_dir:
     :param intermediary_dir:
     :param database_structure:
     :return:
@@ -142,20 +142,23 @@ def update_public_info(
 
     # --- init lib reader
     with open(futures_md_structure_path, "r") as j:
-        md_table_struct = json.load(j)[futures_md_db_name]["CTable2"]
+        md_table_struct = json.load(j)[futures_md_db_name]["CTable"]
     md_table = CTable(t_table_struct=md_table_struct)
-    md_db = CManagerLibReader(t_db_save_dir=futures_md_dir, t_db_name=futures_md_db_name + ".db")
+    md_db = CManagerLibReader(t_db_save_dir=futures_dir, t_db_name=futures_md_db_name)
     md_db.set_default(t_default_table_name=md_table.m_table_name)
 
     # w = [0.4, 0.3, 0.2, 0.2]
     w = [0.25, 0.25, 0.25, 0.25]
     dlt_dfs = []
-    for trade_date in calendar.get_iter_list(bgn_date, stp_date, True):
+    iter_dates = calendar.get_iter_list(bgn_date, stp_date, True)
+    for trade_date in track(iter_dates, description=f"[INF] Working Pub {value_type} ... "):
         raw_pos_file = "positions.E.{}.csv.gz".format(trade_date)
-        raw_pos_path = os.path.join(futures_fundamental_intermediary_dir, trade_date[0:4], trade_date, raw_pos_file)
-        raw_pos_df = pd.read_csv(raw_pos_path, dtype={"type": str})
-        pivot_pos_df = pd.pivot_table(data=raw_pos_df, index=["type", "member_chs"],
-                                      columns=["instrument", "loc_id"], values=value_type)
+        raw_pos_path = os.path.join(futures_by_date_dir, trade_date[0:4], trade_date, raw_pos_file)
+        raw_pos_df = pd.read_csv(raw_pos_path, dtype={"type": str})  # type:ignore
+        pivot_pos_df = pd.pivot_table(
+            data=raw_pos_df, index=["type", "member_chs"],
+            columns=["instrument", "loc_id"], values=value_type
+        )
 
         for instrument, instru_sub_id in zip(instruments, instru_sub_ids):
             instru_pub_info_df = md_db.read_by_conditions(t_conditions=[
