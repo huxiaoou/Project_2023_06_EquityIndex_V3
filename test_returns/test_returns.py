@@ -4,15 +4,10 @@ import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from rich.progress import track
-from skyrim.whiterun import CCalendar
+from skyrim.whiterun import CCalendar, error_handler
 from skyrim.falkreath import CTable, CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriterByDate
-
-
-def error_handler(error):
-    print(f"'Error': {error}", flush=True)
-    return -1
 
 
 def lookup_av_ratio(db: CManagerLibReader, date: str, contract: str, ret_type: str):

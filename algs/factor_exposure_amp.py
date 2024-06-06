@@ -3,8 +3,9 @@ import datetime as dt
 import itertools as ittl
 import multiprocessing as mp
 import pandas as pd
+from skyrim.whiterun import error_handler
 from skyrim.falkreath import CLib1Tab1
-from skyrim.falkreath import CManagerLibWriter
+from skyrim.falkreath import CManagerLibWriter, CManagerLibReader, CTable
 
 
 def cal_amp(t_sub_df: pd.DataFrame, t_x: str, t_sort_var: str, t_top_size: int):
@@ -20,7 +21,7 @@ def fac_exp_alg_amp(
         amp_window: int, lbd: float,
         instruments_universe: list[str],
         database_structure: dict[str, CLib1Tab1],
-        major_return_dir: str,
+        by_instrument_dir: str,
         factors_exposure_dir: str,
         mapper_fut_to_idx: dict[str, str],
         equity_index_by_instrument_dir: str,
@@ -34,7 +35,7 @@ def fac_exp_alg_amp(
     :param lbd:
     :param instruments_universe:
     :param database_structure:
-    :param major_return_dir:
+    :param by_instrument_dir:
     :param factors_exposure_dir:
     :param mapper_fut_to_idx: {'IH.CFE': '000016.SH', 'IF.CFE': '000300.SH', 'IC.CFE': '000905.SH', 'IM.CFE': '000852.SH', None: '881001.WI'}
     :param equity_index_by_instrument_dir:
@@ -54,9 +55,13 @@ def fac_exp_alg_amp(
         spot_data_path = os.path.join(equity_index_by_instrument_dir, spot_data_file)
         spot_df = pd.read_csv(spot_data_path, dtype={"trade_date": str}).set_index("trade_date")
 
-        major_return_file = "major_return.{}.close.csv.gz".format(instrument)
-        major_return_path = os.path.join(major_return_dir, major_return_file)
-        major_return_df = pd.read_csv(major_return_path, dtype={"trade_date": str}).set_index("trade_date")
+        major_return_lib_reader = CManagerLibReader(by_instrument_dir, "major_return.db")
+        major_return_df = major_return_lib_reader.read(
+            t_value_columns=["trade_date", "open", "high", "low", "close"],
+            t_using_default_table=False,
+            t_table_name=instrument.replace(".", "_"),
+        ).set_index("trade_date")
+
         major_return_df["amp"] = major_return_df["high"] / major_return_df["low"] - 1
         major_return_df["spot"] = spot_df["close"]
 
@@ -86,7 +91,8 @@ def fac_exp_alg_amp(
             t_db_name=factor_lib_structure.m_lib_name,
             t_db_save_dir=factors_exposure_dir
         )
-        factor_lib.initialize_table(t_table=factor_lib_structure.m_tab, t_remove_existence=run_mode in ["O", "OVERWRITE"])
+        factor_lib.initialize_table(t_table=factor_lib_structure.m_tab,
+                                    t_remove_existence=run_mode in ["O", "OVERWRITE"])
         factor_lib.update(t_update_df=all_factor_df, t_using_index=True)
         factor_lib.close()
 
@@ -99,7 +105,7 @@ def cal_fac_exp_amp_mp(proc_num: int,
                        amp_windows: list[int], lbds: list[float],
                        instruments_universe: list[str],
                        database_structure: dict,
-                       major_return_dir: str,
+                       by_instrument_dir: str,
                        factors_exposure_dir: str,
                        mapper_fut_to_idx: dict[str, str],
                        equity_index_by_instrument_dir: str):
@@ -111,10 +117,12 @@ def cal_fac_exp_amp_mp(proc_num: int,
                                p_window, lbd,
                                instruments_universe,
                                database_structure,
-                               major_return_dir,
+                               by_instrument_dir,
                                factors_exposure_dir,
                                mapper_fut_to_idx,
-                               equity_index_by_instrument_dir))
+                               equity_index_by_instrument_dir),
+                         error_callback=error_handler,
+                         )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()

@@ -1,8 +1,10 @@
 import argparse
 from struct_lib import database_structure
+from project_setup import futures_by_instru_dir, equity_index_by_instrument_dir
+from project_setup import research_factors_exposure_dir
+from project_config import instruments_universe
 
 # from project_config import equity_indexes, mapper_futures_to_index
-# from project_config import instruments_universe
 # from project_config import factors, factors_ma, factors_args, test_return_types, factor_mov_ave_wins
 # from project_config import manager_cx_windows
 # from project_config import cost_rate
@@ -91,17 +93,13 @@ if __name__ == "__main__":
     if switch in ["PREPROCESS"]:
         if factor == "split":
             from preprocess.preprocess import split_spot_daily_k
-            from project_setup import equity_index_by_instrument_dir
             from project_config import equity_indexes
 
             split_spot_daily_k(equity_index_by_instrument_dir, equity_indexes)
         elif factor == "m01":
             from preprocess.preprocess import update_major_minute
-            from project_setup import (calendar_path, futures_dir,
-                                       futures_md_structure_path, futures_em01_db_name,
-                                       futures_by_instru_dir)
+            from project_setup import calendar_path, futures_dir, futures_md_structure_path, futures_em01_db_name
             from project_setup import research_intermediary_dir
-            from project_config import instruments_universe
 
             update_major_minute(run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
                                 instruments=instruments_universe, calendar_path=calendar_path,
@@ -113,9 +111,8 @@ if __name__ == "__main__":
                                 database_structure=database_structure)
         elif factor == "pub":
             from preprocess.preprocess import update_public_info
-            from project_setup import (calendar_path, futures_dir,
-                                       futures_md_structure_path, futures_md_db_name,
-                                       futures_by_date_dir)
+            from project_setup import (calendar_path, futures_dir, futures_md_structure_path,
+                                       futures_md_db_name, futures_by_date_dir)
             from project_setup import research_intermediary_dir
             from project_config import instruments_universe
 
@@ -132,9 +129,9 @@ if __name__ == "__main__":
                                    database_structure=database_structure
                                    )
     elif switch in ["TEST_RETURNS"]:
-        from project_setup import (research_test_returns_dir, calendar_path, futures_dir, futures_by_instru_dir,
+        from project_setup import (research_test_returns_dir, calendar_path, futures_dir,
                                    futures_md_structure_path, futures_em01_db_name)
-        from project_config import instruments_universe, test_return_types
+        from project_config import test_return_types
         from test_returns.test_returns import cal_test_returns_mp
 
         cal_test_returns_mp(
@@ -150,19 +147,24 @@ if __name__ == "__main__":
             futures_md_structure_path=futures_md_structure_path,
             futures_em01_db_name=futures_em01_db_name,
         )
-    # elif switch in ["FE", "FACTORS_EXPOSURE"]:
-    #     if factor == "amp":
-    #         cal_fac_exp_amp_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             amp_windows=factors_args["amp_windows"], lbds=factors_args["lbds"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             major_return_dir=major_return_dir,
-    #             factors_exposure_dir=research_factors_exposure_dir,
-    #             mapper_fut_to_idx=mapper_futures_to_index,
-    #             equity_index_by_instrument_dir=equity_index_by_instrument_dir
-    #         )
+    elif switch in ["FACTORS_EXPOSURE"]:
+        from project_config import factors_args
+
+        if factor == "amp":
+            from project_config import mapper_futures_to_index
+            from algs.factor_exposure_amp import cal_fac_exp_amp_mp
+
+            cal_fac_exp_amp_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                amp_windows=factors_args["amp_windows"], lbds=factors_args["lbds"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                by_instrument_dir=futures_by_instru_dir,
+                factors_exposure_dir=research_factors_exposure_dir,
+                mapper_fut_to_idx=mapper_futures_to_index,
+                equity_index_by_instrument_dir=equity_index_by_instrument_dir
+            )
     #     elif factor == "amt":
     #         cal_fac_exp_amt_mp(
     #             proc_num=proc_num,
