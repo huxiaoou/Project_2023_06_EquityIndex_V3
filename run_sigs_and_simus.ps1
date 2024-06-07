@@ -17,6 +17,7 @@ python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 
 python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor to
 python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor ts
 python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor twc
+python main.py --switch fema --mode o --bgn 20160615 --stp 20240201
 python main.py -mode o -bgn 20160615 -stp 20240201 -w sig
 python main.py -mode o -bgn 20160701 -stp 20240201 -w simu
 python main.py --switch simusum

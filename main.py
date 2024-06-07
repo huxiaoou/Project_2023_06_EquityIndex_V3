@@ -28,17 +28,19 @@ from signals.signals import cal_signals_mp, cal_simulations_mp, cal_simulations_
 
 if __name__ == "__main__":
     args_parser = argparse.ArgumentParser(description="Entry point of this project")
-    args_parser.add_argument("--switch", type=str, help="""
-        use this to decide which parts to run, available options = {'preprocess', 'test_returns', 'factors_exposure'}
-        """)
-    args_parser.add_argument("--factor", type=str, default="", help="""
+    args_parser.add_argument(
+        "--switch", type=str,
+        choices=("preprocess", "test_returns", "factors_exposure", "fema"),
+        help="use this to decide which parts to run, available options",
+    )
+    args_parser.add_argument(
+        "--factor", type=str, default="",
+        help="""
         optional, must be provided if switch = {'preprocess', 'factors_exposure'},
         use this to decide which factor, available options = {
         'amp', 'amt', 'basis', 'beta', 'cx', 'exr', 'mtm', 'pos', 'sgm', 'size', 'skew', 'smt', 'to', 'ts', 'twc'}
         """)
-    args_parser.add_argument("--mode", type=str, choices=("o", "a"), help="""
-        run mode, available options = {'o', 'overwrite', 'a', 'append'}
-        """)
+    args_parser.add_argument("--mode", type=str, choices=("o", "a"), help="run mode")
     args_parser.add_argument("--bgn", type=str, help="""
         begin date, may be different according to different switches, suggestion of different switch:
         {   
@@ -346,15 +348,19 @@ if __name__ == "__main__":
             )
         else:
             raise ValueError(f"factor = {factor} is illegal, please check again")
-    # elif switch in ["FEMA", "FACTORS_EXPOSURE_MOVING_AVERAGE"]:
-    #     cal_fac_exp_MA_mp(
-    #         proc_num=proc_num,
-    #         factor_lbls=factors, mov_ave_wins=factor_mov_ave_wins,
-    #         run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #         universe=instruments_universe,
-    #         database_structure=database_structure,
-    #         factors_exposure_dir=research_factors_exposure_dir,
-    #         calendar_path=calendar_path)
+    elif switch in ["FEMA"]:  # "FACTORS_EXPOSURE_MOVING_AVERAGE"
+        from algs.factor_exposure_MA import cal_fac_exp_MA_mp
+        from project_config import factors, factor_mov_ave_wins
+
+        cal_fac_exp_MA_mp(
+            proc_num=proc_num,
+            factor_lbls=factors, mov_ave_wins=factor_mov_ave_wins,
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            universe=instruments_universe,
+            database_structure=database_structure,
+            factors_exposure_dir=research_factors_exposure_dir,
+            calendar_path=calendar_path)
+
     # elif switch in ["IC"]:
     #     cal_ic_tests_mp(
     #         proc_num=5,
