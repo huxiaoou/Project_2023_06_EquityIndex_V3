@@ -296,16 +296,18 @@ if __name__ == "__main__":
                 by_instrument_dir=futures_by_instru_dir,
                 factors_exposure_dir=research_factors_exposure_dir
             )
-    #     elif factor == "skew":
-    #         cal_fac_exp_skew_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             skew_windows=factors_args["skew_windows"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             by_instrument_dir=futures_by_instru_dir,
-    #             factors_exposure_dir=research_factors_exposure_dir
-    #         )
+        elif factor == "skew":
+            from algs.factor_exposure_skew import cal_fac_exp_skew_mp
+
+            cal_fac_exp_skew_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                skew_windows=factors_args["skew_windows"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                by_instrument_dir=futures_by_instru_dir,
+                factors_exposure_dir=research_factors_exposure_dir
+            )
     #     elif factor == "smt":
     #         cal_fac_exp_smt_mp(
     #             proc_num=proc_num,
