@@ -178,18 +178,21 @@ if __name__ == "__main__":
                 factors_exposure_dir=research_factors_exposure_dir,
                 money_scale=10000
             )
-    #     elif factor == "basis":
-    #         cal_fac_exp_basis_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             basis_windows=factors_args["basis_windows"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             major_return_dir=major_return_dir,
-    #             equity_index_by_instrument_dir=equity_index_by_instrument_dir,
-    #             factors_exposure_dir=research_factors_exposure_dir,
-    #             calendar_path=calendar_path,
-    #         )
+        elif factor == "basis":
+            from project_setup import calendar_path
+            from algs.factor_exposure_basis import cal_fac_exp_basis_mp
+
+            cal_fac_exp_basis_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                basis_windows=factors_args["basis_windows"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                by_instrument_dir=futures_by_instru_dir,
+                equity_index_by_instrument_dir=equity_index_by_instrument_dir,
+                factors_exposure_dir=research_factors_exposure_dir,
+                calendar_path=calendar_path,
+            )
     #     elif factor == "beta":
     #         cal_fac_exp_beta_mp(
     #             proc_num=proc_num,
