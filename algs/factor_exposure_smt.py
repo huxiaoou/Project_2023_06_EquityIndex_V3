@@ -3,6 +3,7 @@ import itertools as ittl
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
+from rich.progress import Progress
 from skyrim.whiterun import CCalendar, CInstrumentInfoTable, error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
@@ -64,34 +65,42 @@ def fac_exp_alg_smt(
     em01_major_lib.set_default(t_default_table_name=em01_major_lib_structure.m_tab.m_table_name)
 
     # --- init major contracts
-    all_factor_p_dfs, all_factor_r_dfs = [], []
-    for instrument in instruments_universe:
-        contract_multiplier = instru_info_table.get_multiplier(instrument)
-        em01_df = em01_major_lib.read_by_conditions(
-            t_conditions=[
-                ("trade_date", ">=", base_date),
-                ("trade_date", "<", stp_date),
-                ("instrument", "=", instrument.split(".")[0]),
-            ], t_value_columns=["trade_date", "timestamp", "loc_id", "volume", "amount", "close", "preclose"]
-        )
-        em01_df[["close", "preclose"]] = em01_df[["close", "preclose"]].round(2)
-        em01_df["vwap"] = (em01_df["amount"] / em01_df["volume"] / contract_multiplier * amount_scale).fillna(method="ffill")
-        em01_df["m01_return_cls"] = (em01_df["close"] / em01_df["preclose"] - 1).replace(np.inf, 0)
-        em01_df["smart_idx"] = em01_df[["m01_return_cls", "volume"]].apply(
-            lambda z: np.abs(z["m01_return_cls"]) / np.log(z["volume"]) * 1e4 if z["volume"] > 1 else 0, axis=1)
+    with Progress() as pb:
+        main_task = pb.add_task(description=f"[INF] For each instrument, lbd={lbd:.2f} win={smt_window:02d}",
+                                total=len(instruments_universe), completed=0)
+        sub_task = pb.add_task(description="[INF] For dates", total=0)
+        all_factor_p_dfs, all_factor_r_dfs = [], []
+        for instrument in instruments_universe:
+            contract_multiplier = instru_info_table.get_multiplier(instrument)
+            em01_df = em01_major_lib.read_by_conditions(
+                t_conditions=[
+                    ("trade_date", ">=", base_date),
+                    ("trade_date", "<", stp_date),
+                    ("instrument", "=", instrument.split(".")[0]),
+                ], t_value_columns=["trade_date", "timestamp", "loc_id", "volume", "amount", "close", "preclose"]
+            )
+            em01_df[["close", "preclose"]] = em01_df[["close", "preclose"]].round(2)
+            em01_df["vwap"] = (em01_df["amount"] / em01_df["volume"] / contract_multiplier * amount_scale).ffill()
+            em01_df["m01_return_cls"] = (em01_df["close"] / em01_df["preclose"] - 1).replace(np.inf, 0)
+            em01_df["smart_idx"] = em01_df[["m01_return_cls", "volume"]].apply(
+                lambda z: np.abs(z["m01_return_cls"]) / np.log(z["volume"]) * 1e4 if z["volume"] > 1 else 0, axis=1)
 
-        r_p_data, r_r_data = {}, {}
-        for iter_bgn_date, iter_end_date in zip(iter_bgn_dates, iter_end_dates):
-            filter_dates = (em01_df["trade_date"] >= iter_bgn_date) & (em01_df["trade_date"] <= iter_end_date)
-            sub_df = em01_df.loc[filter_dates]
-            r_p_data[iter_end_date], r_r_data[iter_end_date] = cal_smart(
-                t_sub_df=sub_df, t_sort_var="smart_idx", t_lbd=lbd)
+            r_p_data, r_r_data = {}, {}
+            iter_dates_pair = list(zip(iter_bgn_dates, iter_end_dates))
+            pb.update(sub_task, total=len(iter_dates_pair), completed=0, description=f"[INF] For dates of {instrument}")
+            for iter_bgn_date, iter_end_date in iter_dates_pair:
+                filter_dates = (em01_df["trade_date"] >= iter_bgn_date) & (em01_df["trade_date"] <= iter_end_date)
+                sub_df = em01_df.loc[filter_dates]
+                r_p_data[iter_end_date], r_r_data[iter_end_date] = cal_smart(
+                    t_sub_df=sub_df, t_sort_var="smart_idx", t_lbd=lbd)
+                pb.update(task_id=sub_task, advance=1)
 
-        for _iter_data, _iter_dfs, _iter_factor_lbl in zip([r_p_data, r_r_data],
-                                                           [all_factor_p_dfs, all_factor_r_dfs],
-                                                           [factor_p_lbl, factor_r_lbl]):
-            factor_df = pd.DataFrame({"instrument": instrument, _iter_factor_lbl: pd.Series(_iter_data)})
-            _iter_dfs.append(factor_df[["instrument", _iter_factor_lbl]])
+            for _iter_data, _iter_dfs, _iter_factor_lbl in zip([r_p_data, r_r_data],
+                                                               [all_factor_p_dfs, all_factor_r_dfs],
+                                                               [factor_p_lbl, factor_r_lbl]):
+                factor_df = pd.DataFrame({"instrument": instrument, _iter_factor_lbl: pd.Series(_iter_data)})
+                _iter_dfs.append(factor_df[["instrument", _iter_factor_lbl]])
+            pb.update(task_id=main_task, advance=1)
 
     for _iter_dfs, _iter_factor_lbl in zip([all_factor_p_dfs, all_factor_r_dfs],
                                            [factor_p_lbl, factor_r_lbl]):
@@ -105,12 +114,12 @@ def fac_exp_alg_smt(
             t_db_name=factor_lib_structure.m_lib_name,
             t_db_save_dir=factors_exposure_dir
         )
-        factor_lib.initialize_table(t_table=factor_lib_structure.m_tab, t_remove_existence=run_mode in ["O", "OVERWRITE"])
+        factor_lib.initialize_table(t_table=factor_lib_structure.m_tab,
+                                    t_remove_existence=run_mode in ["O", "OVERWRITE"])
         factor_lib.update(t_update_df=all_factor_df, t_using_index=True)
         factor_lib.close()
 
-        em01_major_lib.close()
-        print("... @ {} factor = {:>12s} calculated".format(dt.datetime.now(), _iter_factor_lbl))
+    em01_major_lib.close()
     return 0
 
 

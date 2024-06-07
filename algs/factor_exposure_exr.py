@@ -18,7 +18,7 @@ def find_extreme_return(t_df: pd.DataFrame, t_ret: str, t_drifts: list[int]):
     dxrs = []
     for drift in t_drifts:
         idx_dxr = idx_exr - drift
-        dxr = -t_df[t_ret].iloc[idx_dxr] if idx_exr >= 0 else exr
+        dxr = -t_df[t_ret].iloc[idx_dxr] if idx_dxr >= 0 else exr
         dxrs.append(dxr)
     return exr, dxrs
 

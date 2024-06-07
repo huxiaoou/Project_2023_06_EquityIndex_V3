@@ -285,7 +285,7 @@ if __name__ == "__main__":
                 factors_exposure_dir=research_factors_exposure_dir
             )
         elif factor == "size":
-            from algs.factor_exposure_size import  cal_fac_exp_size_mp
+            from algs.factor_exposure_size import cal_fac_exp_size_mp
 
             cal_fac_exp_size_mp(
                 proc_num=proc_num,
@@ -308,19 +308,22 @@ if __name__ == "__main__":
                 by_instrument_dir=futures_by_instru_dir,
                 factors_exposure_dir=research_factors_exposure_dir
             )
-    #     elif factor == "smt":
-    #         cal_fac_exp_smt_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             smt_windows=factors_args["smt_windows"], lbds=factors_args["lbds"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             factors_exposure_dir=research_factors_exposure_dir,
-    #             intermediary_dir=research_intermediary_dir,
-    #             calendar_path=calendar_path,
-    #             futures_instru_info_path=futures_instru_info_path,
-    #             amount_scale=1e4
-    #         )
+        elif factor == "smt":
+            from project_setup import research_intermediary_dir, futures_instru_info_path
+            from algs.factor_exposure_smt import cal_fac_exp_smt_mp
+
+            cal_fac_exp_smt_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                smt_windows=factors_args["smt_windows"], lbds=factors_args["lbds"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                factors_exposure_dir=research_factors_exposure_dir,
+                intermediary_dir=research_intermediary_dir,
+                calendar_path=calendar_path,
+                futures_instru_info_path=futures_instru_info_path,
+                amount_scale=1e4
+            )
     #     elif factor == "to":
     #         cal_fac_exp_to_mp(
     #             proc_num=proc_num,
