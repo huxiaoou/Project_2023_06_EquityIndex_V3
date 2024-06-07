@@ -6,6 +6,7 @@ python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 
 python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor basis
 python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor beta
 python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor cx
+python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor exr
 python main.py -mode o -bgn 20160615 -stp 20240201 -w sig
 python main.py -mode o -bgn 20160701 -stp 20240201 -w simu
 python main.py --switch simusum

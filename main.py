@@ -219,17 +219,20 @@ if __name__ == "__main__":
                 by_instrument_dir=futures_by_instru_dir,
                 factors_exposure_dir=research_factors_exposure_dir
             )
-    #     elif factor == "exr":
-    #         cal_fac_exp_exr_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             exr_windows=factors_args["exr_windows"], drifts=factors_args["drifts"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             factors_exposure_dir=research_factors_exposure_dir,
-    #             intermediary_dir=research_intermediary_dir,
-    #             calendar_path=calendar_path,
-    #         )
+        elif factor == "exr":
+            from project_setup import  research_intermediary_dir
+            from algs.factor_exposure_exr import cal_fac_exp_exr_mp
+
+            cal_fac_exp_exr_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                exr_windows=factors_args["exr_windows"], drifts=factors_args["drifts"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                factors_exposure_dir=research_factors_exposure_dir,
+                intermediary_dir=research_intermediary_dir,
+                calendar_path=calendar_path,
+            )
     #     elif factor == "mtm":
     #         cal_fac_exp_mtm_mp(
     #             proc_num=proc_num,
