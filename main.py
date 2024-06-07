@@ -272,16 +272,18 @@ if __name__ == "__main__":
                 by_instrument_dir=futures_by_instru_dir,
                 factors_exposure_dir=research_factors_exposure_dir
             )
-    #     elif factor == "sgm":
-    #         cal_fac_exp_sgm_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             sgm_windows=factors_args["sgm_windows"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             major_return_dir=major_return_dir,
-    #             factors_exposure_dir=research_factors_exposure_dir
-    #         )
+        elif factor == "sgm":
+            from algs.factor_exposure_sgm import cal_fac_exp_sgm_mp
+
+            cal_fac_exp_sgm_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                sgm_windows=factors_args["sgm_windows"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                by_instrument_dir=futures_by_instru_dir,
+                factors_exposure_dir=research_factors_exposure_dir
+            )
     #     elif factor == "size":
     #         cal_fac_exp_size_mp(
     #             proc_num=proc_num,

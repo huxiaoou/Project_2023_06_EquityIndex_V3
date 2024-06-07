@@ -10,6 +10,7 @@ python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 
 python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor mtm
 python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor pos
 python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor rng
+python main.py --switch factors_exposure --mode o --bgn 20150416 --stp 20240201 --factor sgm
 python main.py -mode o -bgn 20160615 -stp 20240201 -w sig
 python main.py -mode o -bgn 20160701 -stp 20240201 -w simu
 python main.py --switch simusum
