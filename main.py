@@ -1,12 +1,12 @@
 import argparse
 from struct_lib import database_structure
-from project_setup import futures_by_instru_dir, equity_index_by_instrument_dir
+from project_setup import futures_by_instru_dir, equity_index_by_instrument_dir, calendar_path
 from project_setup import research_factors_exposure_dir
 from project_config import instruments_universe
 
 # from project_config import equity_indexes, mapper_futures_to_index
 # from project_config import factors, factors_ma, factors_args, test_return_types, factor_mov_ave_wins
-# from project_config import manager_cx_windows
+#
 # from project_config import cost_rate
 
 # from project_setup import calendar_path, futures_instru_info_path
@@ -98,7 +98,7 @@ if __name__ == "__main__":
             split_spot_daily_k(equity_index_by_instrument_dir, equity_indexes)
         elif factor == "m01":
             from preprocess.preprocess import update_major_minute
-            from project_setup import calendar_path, futures_dir, futures_md_structure_path, futures_em01_db_name
+            from project_setup import futures_dir, futures_md_structure_path, futures_em01_db_name
             from project_setup import research_intermediary_dir
 
             update_major_minute(run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
@@ -111,7 +111,7 @@ if __name__ == "__main__":
                                 database_structure=database_structure)
         elif factor == "pub":
             from preprocess.preprocess import update_public_info
-            from project_setup import (calendar_path, futures_dir, futures_md_structure_path,
+            from project_setup import (futures_dir, futures_md_structure_path,
                                        futures_md_db_name, futures_by_date_dir)
             from project_setup import research_intermediary_dir
             from project_config import instruments_universe
@@ -129,7 +129,7 @@ if __name__ == "__main__":
                                    database_structure=database_structure
                                    )
     elif switch in ["TEST_RETURNS"]:
-        from project_setup import (research_test_returns_dir, calendar_path, futures_dir,
+        from project_setup import (research_test_returns_dir, futures_dir,
                                    futures_md_structure_path, futures_em01_db_name)
         from project_config import test_return_types
         from test_returns.test_returns import cal_test_returns_mp
@@ -179,7 +179,6 @@ if __name__ == "__main__":
                 money_scale=10000
             )
         elif factor == "basis":
-            from project_setup import calendar_path
             from algs.factor_exposure_basis import cal_fac_exp_basis_mp
 
             cal_fac_exp_basis_mp(
@@ -194,7 +193,6 @@ if __name__ == "__main__":
                 calendar_path=calendar_path,
             )
         elif factor == "beta":
-            from project_setup import calendar_path
             from algs.factor_exposure_beta import cal_fac_exp_beta_mp
 
             cal_fac_exp_beta_mp(
@@ -208,16 +206,19 @@ if __name__ == "__main__":
                 factors_exposure_dir=research_factors_exposure_dir,
                 calendar_path=calendar_path,
             )
-    #     elif factor == "cx":
-    #         cal_fac_exp_cx_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             mgr_cx_windows=manager_cx_windows, top_props=factors_args["top_props"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             major_return_dir=major_return_dir,
-    #             factors_exposure_dir=research_factors_exposure_dir
-    #         )
+        elif factor == "cx":
+            from project_config import manager_cx_windows
+            from algs.factor_exposure_cx import cal_fac_exp_cx_mp
+
+            cal_fac_exp_cx_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                mgr_cx_windows=manager_cx_windows, top_props=factors_args["top_props"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                by_instrument_dir=futures_by_instru_dir,
+                factors_exposure_dir=research_factors_exposure_dir
+            )
     #     elif factor == "exr":
     #         cal_fac_exp_exr_mp(
     #             proc_num=proc_num,

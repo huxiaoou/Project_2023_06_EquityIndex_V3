@@ -1,12 +1,12 @@
-import os
 import datetime as dt
 import itertools as ittl
 import multiprocessing as mp
 import sys
 import pandas as pd
+from rich.progress import track
 from skyrim.whiterun import error_handler
 from skyrim.falkreath import CLib1Tab1
-from skyrim.falkreath import CManagerLibWriter
+from skyrim.falkreath import CManagerLibWriter, CManagerLibReader
 
 
 def cal_corr(t_sub_df: pd.DataFrame, t_x: str, t_y: str, t_sort_var: str, t_top_size: int):
@@ -21,7 +21,7 @@ def fac_exp_alg_cx(
         cx: str, cx_window: int, top_prop: float,
         instruments_universe: list[str],
         database_structure: dict[str, CLib1Tab1],
-        major_return_dir: str,
+        by_instrument_dir: str,
         factors_exposure_dir: str,
 ):
     """
@@ -34,7 +34,7 @@ def fac_exp_alg_cx(
     :param top_prop:
     :param instruments_universe:
     :param database_structure:
-    :param major_return_dir:
+    :param by_instrument_dir:
     :param factors_exposure_dir:
     :return:
     """
@@ -58,10 +58,13 @@ def fac_exp_alg_cx(
 
     # --- init major contracts
     all_factor_dfs = []
-    for instrument in instruments_universe:
-        major_return_file = "major_return.{}.close.csv.gz".format(instrument)
-        major_return_path = os.path.join(major_return_dir, major_return_file)
-        major_return_df = pd.read_csv(major_return_path, dtype={"trade_date": str}).set_index("trade_date")
+    for instrument in track(instruments_universe):
+        major_return_lib_reader = CManagerLibReader(by_instrument_dir, "major_return.db")
+        major_return_df = major_return_lib_reader.read(
+            t_value_columns=["trade_date", "major_return", "high", "low", "volume", "oi", "instru_idx"],
+            t_using_default_table=False,
+            t_table_name=instrument.replace(".", "_"),
+        ).set_index("trade_date")
         if cx.upper() in ["CSP", "CSR"]:
             major_return_df[x] = major_return_df["high"] / major_return_df["low"] - 1
         elif cx.upper() in ["CTP", "CTR"]:
@@ -99,7 +102,7 @@ def cal_fac_exp_cx_mp(proc_num: int,
                       mgr_cx_windows: dict[str, list[int]], top_props: list[float],
                       instruments_universe: list[str],
                       database_structure: dict,
-                      major_return_dir: str,
+                      by_instrument_dir: str,
                       factors_exposure_dir: str):
     t0 = dt.datetime.now()
     pool = mp.Pool(processes=proc_num)
@@ -110,7 +113,7 @@ def cal_fac_exp_cx_mp(proc_num: int,
                                    cx, cx_window, top_prop,
                                    instruments_universe,
                                    database_structure,
-                                   major_return_dir,
+                                   by_instrument_dir,
                                    factors_exposure_dir),
                              error_callback=error_handler,
                              )
