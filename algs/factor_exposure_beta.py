@@ -2,6 +2,7 @@ import os
 import datetime as dt
 import multiprocessing as mp
 import pandas as pd
+from rich.progress import track
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
 from skyrim.falkreath import CManagerLibWriter
@@ -13,7 +14,7 @@ def fac_exp_alg_beta(
         instruments_universe: list[str],
         calendar_path: str,
         database_structure: dict[str, CLib1Tab1],
-        major_return_dir: str,
+        by_instrument_dir: str,
         equity_index_by_instrument_dir: str,
         factors_exposure_dir: str,
 ):
@@ -32,10 +33,13 @@ def fac_exp_alg_beta(
 
     # --- init major contracts
     all_factor_dfs = []
-    for instrument in instruments_universe:
-        major_return_file = "major_return.{}.close.csv.gz".format(instrument)
-        major_return_path = os.path.join(major_return_dir, major_return_file)
-        major_return_df = pd.read_csv(major_return_path, dtype={"trade_date": str}).set_index("trade_date")
+    for instrument in track(instruments_universe):
+        major_return_lib_reader = CManagerLibReader(by_instrument_dir, "major_return.db")
+        major_return_df = major_return_lib_reader.read(
+            t_value_columns=["trade_date", "major_return"],
+            t_using_default_table=False,
+            t_table_name=instrument.replace(".", "_"),
+        ).set_index("trade_date")
         filter_dates = (major_return_df.index >= base_date) & (major_return_df.index < stp_date)
         factor_df = major_return_df.loc[filter_dates, ["major_return"]].copy()
         factor_df["market"] = (market_index_df["close"] / market_index_df["pre_close"] - 1) * 100
@@ -133,7 +137,7 @@ def cal_fac_exp_beta_mp(proc_num: int,
                         beta_windows: list[int],
                         instruments_universe: list[str],
                         database_structure: dict,
-                        major_return_dir: str,
+                        by_instrument_dir: str,
                         equity_index_by_instrument_dir: str,
                         factors_exposure_dir: str,
                         calendar_path: str):
@@ -145,7 +149,7 @@ def cal_fac_exp_beta_mp(proc_num: int,
                                instruments_universe,
                                calendar_path,
                                database_structure,
-                               major_return_dir,
+                               by_instrument_dir,
                                equity_index_by_instrument_dir,
                                factors_exposure_dir),
                          error_callback=error_handler,
