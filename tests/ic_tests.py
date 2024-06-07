@@ -1,9 +1,10 @@
 import datetime as dt
 import pandas as pd
 import multiprocessing as mp
+from rich.progress import Progress
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader, CManagerLibWriter
-from skyrim.whiterun import CCalendar
+from skyrim.whiterun import CCalendar, error_handler
 
 
 def cal_corr_by_date(df: pd.DataFrame, fe: str, tr: str):
@@ -91,15 +92,19 @@ def cal_ic_tests_mp(
         **kwargs
 ):
     t0 = dt.datetime.now()
-    pool = mp.Pool(processes=proc_num)
-    for factor_ma in factors_ma:
-        pool.apply_async(
-            ic_test_single_factor,
-            args=(factor_ma, run_mode, bgn_date, stp_date),
-            kwds=kwargs
-        )
-    pool.close()
-    pool.join()
+    with Progress() as pb:
+        main_task = pb.add_task(description=f"[INF] Calculating ic ...", total=len(factors_ma))
+        pool = mp.Pool(processes=proc_num)
+        for factor_ma in factors_ma:
+            pool.apply_async(
+                ic_test_single_factor,
+                args=(factor_ma, run_mode, bgn_date, stp_date),
+                kwds=kwargs,
+                callback=lambda _: pb.update(main_task, advance=1),
+                error_callback=error_handler,
+            )
+        pool.close()
+        pool.join()
     t1 = dt.datetime.now()
     print("... total time consuming: {:.2f} seconds".format((t1 - t0).total_seconds()))
     return 0

@@ -5,6 +5,7 @@ import pandas as pd
 import multiprocessing as mp
 from skyrim.falkreath import CLib1Tab1, CManagerLibReader
 from skyrim.winterhold import plot_lines
+from skyrim.whiterun import error_handler
 
 
 def cal_ic_tests_summary(
@@ -97,7 +98,8 @@ def cal_ic_tests_summary_mp(
     pool.apply_async(
         cal_ic_tests_summary,
         args=(factors_ma, methods, icir_threshold, bgn_date, stp_date),
-        kwds=kwargs
+        kwds=kwargs,
+        error_callback=error_handler,
     )
     pool.close()
     pool.join()

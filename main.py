@@ -1,74 +1,59 @@
 import argparse
-from struct_lib import database_structure
-from project_setup import futures_by_instru_dir, equity_index_by_instrument_dir, calendar_path
-from project_setup import research_factors_exposure_dir
-from project_config import instruments_universe
 
-# from project_config import equity_indexes, mapper_futures_to_index
-# from project_config import factors, factors_ma, factors_args, test_return_types, factor_mov_ave_wins
-#
-# from project_config import cost_rate
 
-# from project_setup import calendar_path, futures_instru_info_path
-# from project_setup import futures_md_dir, futures_md_structure_path
-# from project_setup import futures_md_db_name, futures_em01_db_name
-# from project_setup import futures_fundamental_intermediary_dir
-#
-# from project_setup import research_test_returns_dir, research_factors_exposure_dir
-# from project_setup import research_intermediary_dir, research_signals_dir, research_simulations_dir, \
-#     research_simulations_summary_dir
-# from project_setup import research_ic_tests_dir, research_ic_tests_summary_dir
-# from project_setup import research_gp_tests_dir, research_gp_tests_summary_dir
-# from tests.ic_tests import cal_ic_tests_mp
-# from tests.ic_tests_summary import cal_ic_tests_summary_mp
-# from tests.gp_tests import cal_gp_tests_mp
-# from tests.gp_tests_summary import cal_gp_tests_summary_mp
-# from tests.gp_tests_corr import cal_gp_tests_corr
-from signals.signals import cal_signals_mp, cal_simulations_mp, cal_simulations_summary
-
-if __name__ == "__main__":
+def parse_args():
     args_parser = argparse.ArgumentParser(description="Entry point of this project")
     args_parser.add_argument(
         "--switch", type=str,
-        choices=("preprocess", "test_returns", "factors_exposure", "fema"),
+        choices=("preprocess", "test_returns", "factors_exposure", "fema", "ic", "icsum"),
         help="use this to decide which parts to run, available options",
     )
     args_parser.add_argument(
         "--factor", type=str, default="",
         help="""
-        optional, must be provided if switch = {'preprocess', 'factors_exposure'},
-        use this to decide which factor, available options = {
-        'amp', 'amt', 'basis', 'beta', 'cx', 'exr', 'mtm', 'pos', 'sgm', 'size', 'skew', 'smt', 'to', 'ts', 'twc'}
-        """)
+            optional, must be provided if switch = {'preprocess', 'factors_exposure'},
+            use this to decide which factor, available options = {
+            'amp', 'amt', 'basis', 'beta', 'cx', 'exr', 'mtm', 'pos', 'sgm', 'size', 'skew', 'smt', 'to', 'ts', 'twc'}
+            """)
     args_parser.add_argument("--mode", type=str, choices=("o", "a"), help="run mode")
     args_parser.add_argument("--bgn", type=str, help="""
-        begin date, may be different according to different switches, suggestion of different switch:
-        {   
-            "preprocess/m01": "20150416",
-            "preprocess/pub": "20150416",
-            "test_returns": "20150416",
-            "factor_exposures": "20150416", 
-            "factor_exposures_moving_average": "20160615", 
-            "tests": "20160701", 
-            "tests_summary": "20160701", 
-            "signals": "20160627", 
-            "simu": "20160701", 
-            "simusum": "20160701",  # not necessary indeed
-        }
-        """)
+            begin date, may be different according to different switches, suggestion of different switch:
+            {
+                "preprocess/m01": "20150416",
+                "preprocess/pub": "20150416",
+                "test_returns": "20150416",
+                "factor_exposures": "20150416",
+                "factor_exposures_moving_average": "20160615",
+                "tests": "20160701",
+                "tests_summary": "20160701",
+                "signals": "20160627",
+                "simu": "20160701",
+                "simusum": "20160701",  # not necessary indeed
+            }
+            """)
     args_parser.add_argument("--stp", type=str, help="""
-        stop date, not included, usually it would be the day after the last trade date, such as
-        "20230619" if last trade date is "20230616"  
-        """)
+            stop date, not included, usually it would be the day after the last trade date, such as
+            "20230619" if last trade date is "20230616"
+            """)
     args_parser.add_argument("-p", "--process", type=int, default=4, help="""
-        number of process to be called when calculating, default = 4
-        """)
+            number of process to be called when calculating, default = 4
+            """)
     args = args_parser.parse_args()
-    switch = args.switch.upper()
-    factor = args.factor.lower()
-    run_mode = args.mode.upper() if args.mode else args.mode
-    bgn_date, stp_date = args.bgn, args.stp
-    proc_num = args.process
+    __switch = args.switch.upper()
+    __factor = args.factor.lower()
+    __run_mode = args.mode.upper() if args.mode else args.mode
+    __bgn_date, __stp_date = args.bgn, args.stp
+    __proc_num = args.process
+    return __switch, __factor, __run_mode, __bgn_date, __stp_date, __proc_num
+
+
+if __name__ == "__main__":
+    from struct_lib import database_structure
+    from project_setup import futures_by_instru_dir, equity_index_by_instrument_dir, calendar_path
+    from project_setup import research_factors_exposure_dir
+    from project_config import instruments_universe
+
+    switch, factor, run_mode, bgn_date, stp_date, proc_num = parse_args()
 
     if switch in ["PREPROCESS"]:
         if factor == "split":
@@ -360,27 +345,36 @@ if __name__ == "__main__":
             database_structure=database_structure,
             factors_exposure_dir=research_factors_exposure_dir,
             calendar_path=calendar_path)
+    elif switch in ["IC"]:
+        from project_setup import research_ic_tests_dir, research_test_returns_dir
+        from tests.ic_tests import cal_ic_tests_mp
+        from project_config import factors_ma
 
-    # elif switch in ["IC"]:
-    #     cal_ic_tests_mp(
-    #         proc_num=5,
-    #         factors_ma=factors_ma,
-    #         run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #         tests_result_dir=research_ic_tests_dir,
-    #         factors_exposure_dir=research_factors_exposure_dir,
-    #         test_returns_dir=research_test_returns_dir,
-    #         database_structure=database_structure,
-    #         calendar_path=calendar_path)
-    # elif switch in ["ICSUM"]:
-    #     cal_ic_tests_summary_mp(
-    #         proc_num=proc_num,
-    #         factors_ma=factors_ma,
-    #         methods=["pearson", "spearman"], icir_threshold=1.2,
-    #         bgn_date=bgn_date, stp_date=stp_date,
-    #         database_structure=database_structure,
-    #         tests_result_dir=research_ic_tests_dir,
-    #         tests_result_summary_dir=research_ic_tests_summary_dir,
-    #         days_per_year=252)
+        cal_ic_tests_mp(
+            proc_num=proc_num,
+            factors_ma=factors_ma,
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            tests_result_dir=research_ic_tests_dir,
+            factors_exposure_dir=research_factors_exposure_dir,
+            test_returns_dir=research_test_returns_dir,
+            database_structure=database_structure,
+            calendar_path=calendar_path,
+        )
+    elif switch in ["ICSUM"]:
+        from project_setup import research_ic_tests_dir, research_ic_tests_summary_dir
+        from project_config import factors_ma
+        from tests.ic_tests_summary import cal_ic_tests_summary_mp
+
+        cal_ic_tests_summary_mp(
+            proc_num=proc_num,
+            factors_ma=factors_ma,
+            methods=["pearson", "spearman"], icir_threshold=1.1,
+            bgn_date=bgn_date, stp_date=stp_date,
+            database_structure=database_structure,
+            tests_result_dir=research_ic_tests_dir,
+            tests_result_summary_dir=research_ic_tests_summary_dir,
+            days_per_year=252,
+        )
     # elif switch in ["GP"]:
     #     cal_gp_tests_mp(
     #         proc_num=5,
@@ -464,8 +458,9 @@ if __name__ == "__main__":
     #         database_structure=database_structure,
     #         calendar_path=calendar_path)
     elif switch in ["SIMUSUM"]:
-        from struct_sig import signals_structure, sids_fix_f_ma_syn, sids_fix_f_syn_ma, sids_dyn
+        from struct_sig import sids_fix_f_ma_syn, sids_fix_f_syn_ma, sids_dyn
         from project_setup import research_simulations_dir, research_simulations_summary_dir
+        from signals.signals import cal_simulations_summary
 
         cal_simulations_summary(
             sids=sids_fix_f_ma_syn + sids_fix_f_syn_ma + sids_dyn,
