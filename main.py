@@ -10,7 +10,6 @@ from project_config import instruments_universe
 # from project_config import cost_rate
 
 # from project_setup import calendar_path, futures_instru_info_path
-# from project_setup import major_minor_dir, major_return_dir, md_by_instru_dir
 # from project_setup import futures_md_dir, futures_md_structure_path
 # from project_setup import futures_md_db_name, futures_em01_db_name
 # from project_setup import futures_fundamental_intermediary_dir
@@ -20,27 +19,6 @@ from project_config import instruments_universe
 #     research_simulations_summary_dir
 # from project_setup import research_ic_tests_dir, research_ic_tests_summary_dir
 # from project_setup import research_gp_tests_dir, research_gp_tests_summary_dir
-#
-# from preprocess.preprocess import split_spot_daily_k, update_major_minute, update_public_info
-# from test_returns.test_returns import cal_test_returns_mp
-# from algs.factor_exposure_amp import cal_fac_exp_amp_mp
-# from algs.factor_exposure_amt import cal_fac_exp_amt_mp
-# from algs.factor_exposure_basis import cal_fac_exp_basis_mp
-# from algs.factor_exposure_beta import cal_fac_exp_beta_mp
-# from algs.factor_exposure_cx import cal_fac_exp_cx_mp
-# from algs.factor_exposure_exr import cal_fac_exp_exr_mp
-# from algs.factor_exposure_mtm import cal_fac_exp_mtm_mp
-# from algs.factor_exposure_pos import cal_fac_exp_pos_mp
-# from algs.factor_exposure_rng import cal_fac_exp_rng_mp
-# from algs.factor_exposure_sgm import cal_fac_exp_sgm_mp
-# from algs.factor_exposure_size import cal_fac_exp_size_mp
-# from algs.factor_exposure_skew import cal_fac_exp_skew_mp
-# from algs.factor_exposure_smt import cal_fac_exp_smt_mp
-# from algs.factor_exposure_to import cal_fac_exp_to_mp
-# from algs.factor_exposure_ts import cal_fac_exp_ts_mp
-# from algs.factor_exposure_twc import cal_fac_exp_twc_mp
-# from algs.factor_exposure_MA import cal_fac_exp_MA_mp
-#
 # from tests.ic_tests import cal_ic_tests_mp
 # from tests.ic_tests_summary import cal_ic_tests_summary_mp
 # from tests.gp_tests import cal_gp_tests_mp
@@ -324,29 +302,34 @@ if __name__ == "__main__":
                 futures_instru_info_path=futures_instru_info_path,
                 amount_scale=1e4
             )
-    #     elif factor == "to":
-    #         cal_fac_exp_to_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             to_windows=factors_args["to_windows"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             by_instrument_dir=futures_by_instru_dir,
-    #             factors_exposure_dir=research_factors_exposure_dir
-    #         )
-    #     elif factor == "ts":
-    #         cal_fac_exp_ts_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             ts_windows=factors_args["ts_windows"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             major_minor_dir=major_minor_dir,
-    #             md_dir=md_by_instru_dir,
-    #             factors_exposure_dir=research_factors_exposure_dir,
-    #             calendar_path=calendar_path,
-    #             price_type="close",
-    #         )
+        elif factor == "to":
+            from algs.factor_exposure_to import cal_fac_exp_to_mp
+
+            cal_fac_exp_to_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                to_windows=factors_args["to_windows"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                by_instrument_dir=futures_by_instru_dir,
+                factors_exposure_dir=research_factors_exposure_dir
+            )
+        elif factor == "ts":
+            from algs.factor_exposure_ts import cal_fac_exp_ts_mp
+            from project_setup import futures_by_instru_md_dir
+
+            cal_fac_exp_ts_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                ts_windows=factors_args["ts_windows"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                by_instrument_dir=futures_by_instru_dir,
+                md_dir=futures_by_instru_md_dir,
+                factors_exposure_dir=research_factors_exposure_dir,
+                calendar_path=calendar_path,
+                price_type="close",
+            )
     #     elif factor == "twc":
     #         cal_fac_exp_twc_mp(
     #             proc_num=proc_num,

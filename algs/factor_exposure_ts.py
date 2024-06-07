@@ -3,6 +3,7 @@ import datetime as dt
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
+from rich.progress import track
 from skyrim.whiterun import CCalendar, error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
@@ -38,7 +39,7 @@ def fac_exp_alg_ts(
         instruments_universe: list[str],
         calendar_path: str,
         database_structure: dict[str, CLib1Tab1],
-        major_minor_dir: str,
+        by_instrument_dir: str,
         md_dir: str,
         factors_exposure_dir: str,
         price_type: str,
@@ -53,17 +54,21 @@ def fac_exp_alg_ts(
 
     # --- init major contracts
     all_factor_dfs = []
-    for instrument in instruments_universe:
-        major_minor_file = "major_minor.{}.csv.gz".format(instrument)
-        major_minor_path = os.path.join(major_minor_dir, major_minor_file)
-        major_minor_df = pd.read_csv(major_minor_path, dtype={"trade_date": str}).set_index("trade_date")
+    for instrument in track(instruments_universe):
+        major_minor_lib_reader = CManagerLibReader(by_instrument_dir, "major_minor.db")
+        major_minor_df = major_minor_lib_reader.read(
+            t_value_columns=["trade_date", "n_contract", "d_contract"],
+            t_using_default_table=False,
+            t_table_name=instrument.replace(".", "_"),
+        ).set_index("trade_date")
         md_file = "{}.md.{}.csv.gz".format(instrument, price_type)
         md_path = os.path.join(md_dir, md_file)
         md_df = pd.read_csv(md_path, dtype={"trade_date": str}).set_index("trade_date")
         filter_dates = (major_minor_df.index >= base_date) & (major_minor_df.index < stp_date)
         factor_df = major_minor_df.loc[filter_dates].copy()
         factor_df["instrument"] = instrument
-        factor_df["n_" + price_type], factor_df["d_" + price_type] = zip(*factor_df.apply(find_price, args=(md_df,), axis=1))
+        factor_df["n_" + price_type], factor_df["d_" + price_type] = zip(
+            *factor_df.apply(find_price, args=(md_df,), axis=1))
         factor_df[factor_lbl] = factor_df.apply(cal_roll_return, args=("n_" + price_type, "d_" + price_type), axis=1)
         all_factor_dfs.append(factor_df[["instrument", factor_lbl]])
 
@@ -164,7 +169,7 @@ def cal_fac_exp_ts_mp(proc_num: int,
                       ts_windows: list[int],
                       instruments_universe: list[str],
                       database_structure: dict,
-                      major_minor_dir: str,
+                      by_instrument_dir: str,
                       md_dir: str,
                       factors_exposure_dir: str,
                       calendar_path: str,
@@ -174,7 +179,7 @@ def cal_fac_exp_ts_mp(proc_num: int,
                    instruments_universe,
                    calendar_path,
                    database_structure,
-                   major_minor_dir,
+                   by_instrument_dir,
                    md_dir,
                    factors_exposure_dir,
                    price_type)
