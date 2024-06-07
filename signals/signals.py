@@ -4,7 +4,7 @@ import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from skyrim.falkreath import CLib1Tab1, CManagerLibReader, CManagerLibWriter
-from skyrim.whiterun import CCalendar, CCalendarMonthly
+from skyrim.whiterun import CCalendar, CCalendarMonthly, error_handler
 from skyrim.winterhold import check_and_mkdir, plot_lines
 from skyrim.markarth import minimize_utility
 from skyrim.riften import CNAV
@@ -54,12 +54,14 @@ class CSignalBase(object):
             ], t_value_columns=["trade_date", "instrument", "value"]
         )
         sig_lib.close()
-        sig_df_shift, dlt_wgt_srs = shift_wgt(sig_df, row="trade_date", col="instrument", val="value", shift_win=self.m_FIX_TEST_WIN + 1)
+        sig_df_shift, dlt_wgt_srs = shift_wgt(sig_df, row="trade_date", col="instrument", val="value",
+                                              shift_win=self.m_FIX_TEST_WIN + 1)
 
         # --- test return library
         test_return_lib_id = "test_return_o"
         test_return_lib_structure = database_structure[test_return_lib_id]
-        test_return_lib = CManagerLibReader(t_db_name=test_return_lib_structure.m_lib_name, t_db_save_dir=test_returns_dir)
+        test_return_lib = CManagerLibReader(t_db_name=test_return_lib_structure.m_lib_name,
+                                            t_db_save_dir=test_returns_dir)
         test_return_lib.set_default(test_return_lib_structure.m_tab.m_table_name)
         test_return_df = test_return_lib.read_by_conditions(
             t_conditions=[
@@ -123,7 +125,8 @@ class CSignal(CSignalBase):
                 ("trade_date", "<", self.m_stp_date),
             ], t_value_columns=["trade_date", "instrument", "value"])
             factor_lib.close()
-            pivot_df = pd.pivot_table(data=df, index="trade_date", columns="instrument", values="value")[self.m_universe]
+            pivot_df = pd.pivot_table(data=df, index="trade_date", columns="instrument", values="value")[
+                self.m_universe]
             self.m_factors_weight[factor] = pivot_df.sort_index()
             pivot_df["factor"] = factor
             dfs_list.append(pivot_df)
@@ -135,8 +138,10 @@ class CSignal(CSignalBase):
         pass
 
     def _save(self):
-        sig_lib = CManagerLibWriter(t_db_save_dir=self.m_signals_weights_dir, t_db_name=self.m_sig_lib_structure.m_lib_name)
-        sig_lib.initialize_table(t_table=self.m_sig_lib_structure.m_tab, t_remove_existence=self.m_run_mode in ["O", "OVERWRITE"])
+        sig_lib = CManagerLibWriter(t_db_save_dir=self.m_signals_weights_dir,
+                                    t_db_name=self.m_sig_lib_structure.m_lib_name)
+        sig_lib.initialize_table(t_table=self.m_sig_lib_structure.m_tab,
+                                 t_remove_existence=self.m_run_mode in ["O", "OVERWRITE"])
         sig_lib.update(self.m_sig_save_df, t_using_index=True)
         sig_lib.close()
         return 0
@@ -153,7 +158,8 @@ class CSignalFixWeight(CSignal):
                  database_structure: dict[str, CLib1Tab1],
                  calendar_path: str):
         factors, fix_weights = zip(*factors_struct)
-        super().__init__(sid, universe, factors, run_mode, bgn_date, stp_date, signals_dir, database_structure, calendar_path)
+        super().__init__(sid, universe, factors, run_mode, bgn_date, stp_date, signals_dir, database_structure,
+                         calendar_path)
         ws = pd.Series(data=fix_weights, index=factors)
         self.m_fix_weights = ws / ws.abs().sum()
 
@@ -185,7 +191,8 @@ class CSignalFixWeightFSynMa(CSignalFixWeight):
                  database_structure: dict[str, CLib1Tab1],
                  calendar_path: str):
         self.m_mov_ave_win = mov_ave_win
-        super().__init__(sid, universe, factors_struct, run_mode, bgn_date, stp_date, signals_dir, database_structure, calendar_path)
+        super().__init__(sid, universe, factors_struct, run_mode, bgn_date, stp_date, signals_dir, database_structure,
+                         calendar_path)
 
     def _cal_weight(self, database_structure: dict[str, CLib1Tab1], factors_exposure_dir: str):
         super()._cal_weight(database_structure, factors_exposure_dir)
@@ -210,7 +217,8 @@ class CSignalDynamicWeight(CSignal):
         ws = pd.Series(data=fix_weights, index=factors)
         self.m_default_weights = ws / ws.abs().sum()
 
-        super().__init__(sid, universe, factors, run_mode, bgn_date, stp_date, signals_dir, database_structure, calendar_path)
+        super().__init__(sid, universe, factors, run_mode, bgn_date, stp_date, signals_dir, database_structure,
+                         calendar_path)
         self.m_mov_ave_win = mov_ave_win
         self.m_min_model_days = min_model_days
         self.m_signals_models_dir = os.path.join(self.m_signals_dir, "models")
@@ -231,7 +239,8 @@ class CSignalDynamicWeight(CSignal):
     def __load_train_dates(self, calendar: CCalendarMonthly):
         iter_months = calendar.map_iter_dates_to_iter_months(self.m_bgn_date, self.m_stp_date)
         for train_end_month in iter_months:
-            train_bgn_date, train_end_date = calendar.get_bgn_and_end_dates_for_trailing_window(train_end_month, self.m_trn_win)
+            train_bgn_date, train_end_date = calendar.get_bgn_and_end_dates_for_trailing_window(train_end_month,
+                                                                                                self.m_trn_win)
             self.m_train_dates.append((train_end_month, train_bgn_date, train_end_date))
             check_and_mkdir(year_dir := os.path.join(self.m_signals_models_dir, train_end_month[0:4]))
             check_and_mkdir(os.path.join(year_dir, train_end_month))
@@ -275,7 +284,8 @@ class CSignalDynamicWeight(CSignal):
             # save model
             model_save_df = pd.DataFrame({self.m_sid: ws})
             model_save_file = "{}-{}.csv.gz".format(self.m_sid, train_end_month)
-            model_save_path = os.path.join(self.m_signals_models_dir, train_end_month[0:4], train_end_month, model_save_file)
+            model_save_path = os.path.join(self.m_signals_models_dir, train_end_month[0:4], train_end_month,
+                                           model_save_file)
             model_save_df.to_csv(model_save_path, index_label="factor", float_format="%.6f")
         return 0
 
@@ -293,7 +303,7 @@ class CSignalDynamicWeight(CSignal):
             left=header_df, right=opt_wgt_df,
             left_on="trade_date", right_index=True,
             how="left"
-        ).set_index("trade_date").fillna(method="ffill").shift(1).fillna(method="bfill")
+        ).set_index("trade_date").ffill().shift(1).bfill()
 
         sig_grp_df = self.m_raw_wgt_df.groupby(lambda z: z).apply(self._sumprod_weights)
         sig_nrm_df = sig_grp_df.div(sig_grp_df.abs().sum(axis=1), axis=0).fillna(0)
@@ -331,8 +341,11 @@ def cal_signals_mp(
                                         signals_dir,
                                         database_structure,
                                         calendar_path)
-        pool.apply_async(signal.main_cal_sig, args=(database_structure, factors_exposure_dir))
-
+        pool.apply_async(
+            signal.main_cal_sig,
+            args=(database_structure, factors_exposure_dir),
+            error_callback=error_handler,
+        )
     for sid in sids_f_syn_ma_fix:
         sig_struct = signals_structure["sigFixFSynMa"][sid]
         signal = CSignalFixWeightFSynMa(sid, sig_struct["universe"], sig_struct["mov_ave_win"],
@@ -341,12 +354,17 @@ def cal_signals_mp(
                                         signals_dir,
                                         database_structure,
                                         calendar_path)
-        pool.apply_async(signal.main_cal_sig, args=(database_structure, factors_exposure_dir))
+        pool.apply_async(
+            signal.main_cal_sig,
+            args=(database_structure, factors_exposure_dir),
+            error_callback=error_handler,
+        )
 
     # --- for dynamics
     for sid in sids_dyn:
         sig_struct = signals_structure["sigDyn"][sid]
-        signal = CSignalDynamicWeight(sid, sig_struct["universe"], sig_struct["mov_ave_win"], sig_struct["min_model_days"],
+        signal = CSignalDynamicWeight(sid, sig_struct["universe"], sig_struct["mov_ave_win"],
+                                      sig_struct["min_model_days"],
                                       sig_struct["factors_struct"],
                                       run_mode, bgn_date, stp_date,
                                       trn_win, lbd,
@@ -354,7 +372,11 @@ def cal_signals_mp(
                                       gp_tests_dir,
                                       database_structure,
                                       calendar_path)
-        pool.apply_async(signal.main_cal_sig, args=(database_structure, factors_exposure_dir))
+        pool.apply_async(
+            signal.main_cal_sig,
+            args=(database_structure, factors_exposure_dir),
+            error_callback=error_handler,
+        )
 
     pool.close()
     pool.join()
@@ -380,10 +402,16 @@ def cal_simulations_mp(
     pool = mp.Pool(processes=proc_num)
     for sid in sids:
         signal = CSignalBase(sid, run_mode, bgn_date, stp_date, signals_dir, calendar_path)
-        pool.apply_async(signal.main_cal_sim, args=(cost_rate,
-                                                    database_structure,
-                                                    test_returns_dir,
-                                                    simulations_dir))
+        pool.apply_async(
+            signal.main_cal_sim,
+            args=(
+                cost_rate,
+                database_structure,
+                test_returns_dir,
+                simulations_dir,
+            ),
+            error_callback=error_handler,
+        )
     pool.close()
     pool.join()
     t1 = dt.datetime.now()
@@ -395,6 +423,9 @@ def cal_simulations_summary(sids: list[str],
                             simulations_dir: str,
                             simulations_summary_dir: str,
                             top_n: int = 5):
+    summary_cols = ["return_mean", "return_std", "hold_period_return", "annual_return", "annual_volatility",
+                    "sharpe_ratio",
+                    "calmar_ratio", "max_drawdown_scale"]
     summary_data = {}
     nav_data = {}
     for sid in sids:
@@ -406,7 +437,7 @@ def cal_simulations_summary(sids: list[str],
         summary_data[sid] = nav.to_dict(t_type="eng")
         nav_data[sid] = simu_df["nav"]
     summary_df = pd.DataFrame.from_dict(summary_data, orient="index")
-    summary_df = summary_df[["return_mean", "return_std", "hold_period_return", "annual_return", "annual_volatility", "sharpe_ratio", "calmar_ratio", "max_drawdown_scale"]]
+    summary_df = summary_df[summary_cols]
     print(summary_df.sort_values("sharpe_ratio", ascending=False))
     summary_file = "simulations-summary.csv"
     summary_path = os.path.join(simulations_summary_dir, summary_file)
@@ -414,5 +445,6 @@ def cal_simulations_summary(sids: list[str],
 
     top_sids = summary_df.sort_values("sharpe_ratio", ascending=False).head(top_n).index
     top_nav_df = pd.DataFrame(nav_data)[top_sids]
-    plot_lines(t_plot_df=top_nav_df, t_fig_name="equity.top_sharpe", t_save_dir=simulations_summary_dir, t_colormap="jet", t_fig_size=(32, 9))
+    plot_lines(t_plot_df=top_nav_df, t_fig_name="equity.top_sharpe", t_save_dir=simulations_summary_dir,
+               t_colormap="jet", t_fig_size=(32, 9))
     return 0

@@ -5,7 +5,12 @@ def parse_args():
     args_parser = argparse.ArgumentParser(description="Entry point of this project")
     args_parser.add_argument(
         "--switch", type=str,
-        choices=("preprocess", "test_returns", "factors_exposure", "fema", "ic", "icsum", "gp", "gpsum", "gpcor"),
+        choices=(
+            "preprocess", "test_returns", "factors_exposure", "fema",
+            "ic", "icsum",
+            "gp", "gpsum", "gpcor",
+            "sig", "simu", "simusum",
+        ),
         help="use this to decide which parts to run, available options",
     )
     args_parser.add_argument(
@@ -424,29 +429,40 @@ if __name__ == "__main__":
             tests_result_dir=research_gp_tests_dir,
             tests_result_summary_dir=research_gp_tests_summary_dir,
         )
-    # elif switch in ["SIG"]:
-    #     cal_signals_mp(
-    #         proc_num=5,
-    #         sids_f_ma_syn_fix=sids_fix_f_ma_syn, sids_f_syn_ma_fix=sids_fix_f_syn_ma,
-    #         sids_dyn=sids_dyn,
-    #         signals_structure=signals_structure,
-    #         run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #         trn_win=3, lbd=1000,
-    #         signals_dir=research_signals_dir,
-    #         factors_exposure_dir=research_factors_exposure_dir,
-    #         gp_tests_dir=research_gp_tests_dir,
-    #         database_structure=database_structure,
-    #         calendar_path=calendar_path)
-    # elif switch in ["SIMU"]:
-    #     cal_simulations_mp(
-    #         proc_num=5, sids=sids_fix_f_ma_syn + sids_fix_f_syn_ma + sids_dyn,
-    #         run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #         cost_rate=cost_rate,
-    #         signals_dir=research_signals_dir,
-    #         test_returns_dir=research_test_returns_dir,
-    #         simulations_dir=research_simulations_dir,
-    #         database_structure=database_structure,
-    #         calendar_path=calendar_path)
+    elif switch in ["SIG"]:
+        from project_setup import research_signals_dir, research_gp_tests_dir
+        from struct_sig import sids_fix_f_ma_syn, sids_fix_f_syn_ma, sids_dyn, signals_structure
+        from signals.signals import cal_signals_mp
+
+        cal_signals_mp(
+            proc_num=proc_num,
+            sids_f_ma_syn_fix=sids_fix_f_ma_syn, sids_f_syn_ma_fix=sids_fix_f_syn_ma,
+            sids_dyn=sids_dyn,
+            signals_structure=signals_structure,
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            trn_win=3, lbd=1000,
+            signals_dir=research_signals_dir,
+            factors_exposure_dir=research_factors_exposure_dir,
+            gp_tests_dir=research_gp_tests_dir,
+            database_structure=database_structure,
+            calendar_path=calendar_path,
+        )
+    elif switch in ["SIMU"]:
+        from project_setup import research_signals_dir, research_test_returns_dir, research_simulations_dir
+        from struct_sig import sids_fix_f_ma_syn, sids_fix_f_syn_ma, sids_dyn
+        from project_config import cost_rate
+        from signals.signals import cal_simulations_mp
+
+        cal_simulations_mp(
+            proc_num=5, sids=sids_fix_f_ma_syn + sids_fix_f_syn_ma + sids_dyn,
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            cost_rate=cost_rate,
+            signals_dir=research_signals_dir,
+            test_returns_dir=research_test_returns_dir,
+            simulations_dir=research_simulations_dir,
+            database_structure=database_structure,
+            calendar_path=calendar_path,
+        )
     elif switch in ["SIMUSUM"]:
         from struct_sig import sids_fix_f_ma_syn, sids_fix_f_syn_ma, sids_dyn
         from project_setup import research_simulations_dir, research_simulations_summary_dir
@@ -455,6 +471,7 @@ if __name__ == "__main__":
         cal_simulations_summary(
             sids=sids_fix_f_ma_syn + sids_fix_f_syn_ma + sids_dyn,
             simulations_dir=research_simulations_dir,
-            simulations_summary_dir=research_simulations_summary_dir)
+            simulations_summary_dir=research_simulations_summary_dir,
+        )
     else:
         raise ValueError(f"... switch = {switch} is not a legal option, please check again")
