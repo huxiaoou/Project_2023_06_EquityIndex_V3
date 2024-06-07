@@ -58,8 +58,8 @@ if __name__ == "__main__":
         stop date, not included, usually it would be the day after the last trade date, such as
         "20230619" if last trade date is "20230616"  
         """)
-    args_parser.add_argument("-p", "--process", type=int, default=5, help="""
-        number of process to be called when calculating, default = 5
+    args_parser.add_argument("-p", "--process", type=int, default=4, help="""
+        number of process to be called when calculating, default = 4
         """)
     args = args_parser.parse_args()
     switch = args.switch.upper()
@@ -330,19 +330,22 @@ if __name__ == "__main__":
                 calendar_path=calendar_path,
                 price_type="close",
             )
-    #     elif factor == "twc":
-    #         cal_fac_exp_twc_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             twc_windows=factors_args["twc_windows"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             factors_exposure_dir=research_factors_exposure_dir,
-    #             intermediary_dir=research_intermediary_dir,
-    #             calendar_path=calendar_path,
-    #         )
-    #     else:
-    #         print("... factor = {} is not a legal option, please check again".format(factor))
+        elif factor == "twc":
+            from project_setup import research_intermediary_dir
+            from algs.factor_exposure_twc import cal_fac_exp_twc_mp
+
+            cal_fac_exp_twc_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                twc_windows=factors_args["twc_windows"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                factors_exposure_dir=research_factors_exposure_dir,
+                intermediary_dir=research_intermediary_dir,
+                calendar_path=calendar_path,
+            )
+        else:
+            raise ValueError(f"factor = {factor} is illegal, please check again")
     # elif switch in ["FEMA", "FACTORS_EXPOSURE_MOVING_AVERAGE"]:
     #     cal_fac_exp_MA_mp(
     #         proc_num=proc_num,

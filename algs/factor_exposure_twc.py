@@ -2,6 +2,7 @@ import datetime as dt
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
+from rich.progress import track
 from skyrim.whiterun import CCalendar, error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
@@ -54,7 +55,7 @@ def fac_exp_alg_twc(
 
     # --- init major contracts
     all_factor_u_dfs, all_factor_d_dfs, all_factor_t_dfs, all_factor_v_dfs = [], [], [], []
-    for instrument in instruments_universe:
+    for instrument in track(instruments_universe):
         em01_df = em01_major_lib.read_by_conditions(
             t_conditions=[
                 ("trade_date", ">=", base_date),
@@ -75,7 +76,6 @@ def fac_exp_alg_twc(
             factor_df = pd.DataFrame(
                 {"instrument": instrument, _iter_factor_lbl: _iter_srs[_iter_srs.index >= bgn_date]})
             _iter_dfs.append(factor_df[["instrument", _iter_factor_lbl]])
-
     for _iter_dfs, _iter_factor_lbl in zip([all_factor_u_dfs, all_factor_d_dfs, all_factor_t_dfs, all_factor_v_dfs],
                                            [factor_u_lbl, factor_d_lbl, factor_t_lbl, factor_v_lbl]):
         # --- reorganize
@@ -92,8 +92,6 @@ def fac_exp_alg_twc(
                                     t_remove_existence=run_mode in ["O", "OVERWRITE"])
         factor_lib.update(t_update_df=all_factor_df, t_using_index=True)
         factor_lib.close()
-
-        print("... @ {} factor = {:>12s} calculated".format(dt.datetime.now(), _iter_factor_lbl))
     return 0
 
 
