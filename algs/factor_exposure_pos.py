@@ -1,6 +1,7 @@
 import datetime as dt
 import multiprocessing as mp
 import pandas as pd
+from rich.progress import track
 from skyrim.whiterun import CCalendar, error_handler
 from skyrim.falkreath import CLib1Tab1
 from skyrim.falkreath import CManagerLibReader
@@ -57,7 +58,7 @@ def fac_exp_alg_pos(
     # --- init major contracts
     all_factor_hl_dfs, all_factor_hs_dfs = [], []
     all_factor_dl_dfs, all_factor_ds_dfs = [], []
-    for instrument in instruments_universe:
+    for instrument in track(instruments_universe):
         hld_pos_df = hld_pos_lib.read_by_conditions(
             t_conditions=[
                 ("trade_date", ">=", base_date),

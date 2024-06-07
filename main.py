@@ -245,18 +245,21 @@ if __name__ == "__main__":
                 by_instrument_dir=futures_by_instru_dir,
                 factors_exposure_dir=research_factors_exposure_dir,
             )
-    #     elif factor == "pos":
-    #         cal_fac_exp_pos_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             top_players_qty=factors_args["top_players_qty"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             factors_exposure_dir=research_factors_exposure_dir,
-    #             test_returns_dir=research_test_returns_dir,
-    #             intermediary_dir=research_intermediary_dir,
-    #             calendar_path=calendar_path,
-    #         )
+        elif factor == "pos":
+            from project_setup import research_test_returns_dir, research_intermediary_dir
+            from algs.factor_exposure_pos import cal_fac_exp_pos_mp
+
+            cal_fac_exp_pos_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                top_players_qty=factors_args["top_players_qty"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                factors_exposure_dir=research_factors_exposure_dir,
+                test_returns_dir=research_test_returns_dir,
+                intermediary_dir=research_intermediary_dir,
+                calendar_path=calendar_path,
+            )
     #     elif factor == "rng":
     #         cal_fac_exp_rng_mp(
     #             proc_num=proc_num,
