@@ -220,7 +220,7 @@ if __name__ == "__main__":
                 factors_exposure_dir=research_factors_exposure_dir
             )
         elif factor == "exr":
-            from project_setup import  research_intermediary_dir
+            from project_setup import research_intermediary_dir
             from algs.factor_exposure_exr import cal_fac_exp_exr_mp
 
             cal_fac_exp_exr_mp(
@@ -233,16 +233,18 @@ if __name__ == "__main__":
                 intermediary_dir=research_intermediary_dir,
                 calendar_path=calendar_path,
             )
-    #     elif factor == "mtm":
-    #         cal_fac_exp_mtm_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             mtm_windows=factors_args["mtm_windows"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             major_return_dir=major_return_dir,
-    #             factors_exposure_dir=research_factors_exposure_dir,
-    #         )
+        elif factor == "mtm":
+            from algs.factor_exposure_mtm import cal_fac_exp_mtm_mp
+
+            cal_fac_exp_mtm_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                mtm_windows=factors_args["mtm_windows"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                by_instrument_dir=futures_by_instru_dir,
+                factors_exposure_dir=research_factors_exposure_dir,
+            )
     #     elif factor == "pos":
     #         cal_fac_exp_pos_mp(
     #             proc_num=proc_num,

@@ -3,16 +3,17 @@ import datetime as dt
 import itertools as ittl
 import multiprocessing as mp
 import pandas as pd
+from rich.progress import track
 from skyrim.whiterun import error_handler
 from skyrim.falkreath import CLib1Tab1
-from skyrim.falkreath import CManagerLibWriter
+from skyrim.falkreath import CManagerLibWriter, CManagerLibReader
 
 
 def fac_exp_alg_mtm(
         run_mode: str, bgn_date: str, stp_date: str | None, mtm_window: int, tag_adj: bool,
         instruments_universe: list[str],
         database_structure: dict[str, CLib1Tab1],
-        major_return_dir: str,
+        by_instrument_dir: str,
         factors_exposure_dir: str,
 ):
     factor_lbl = "MTM{:03d}ADJ".format(mtm_window) if tag_adj else "MTM{:03d}".format(mtm_window)
@@ -21,10 +22,13 @@ def fac_exp_alg_mtm(
 
     # --- init major contracts
     all_factor_dfs = []
-    for instrument in instruments_universe:
-        major_return_file = "major_return.{}.close.csv.gz".format(instrument)
-        major_return_path = os.path.join(major_return_dir, major_return_file)
-        major_return_df = pd.read_csv(major_return_path, dtype={"trade_date": str}).set_index("trade_date")
+    for instrument in track(instruments_universe):
+        major_return_lib_reader = CManagerLibReader(by_instrument_dir, "major_return.db")
+        major_return_df = major_return_lib_reader.read(
+            t_value_columns=["trade_date", "major_return", "instru_idx"],
+            t_using_default_table=False,
+            t_table_name=instrument.replace(".", "_"),
+        ).set_index("trade_date")
         major_return_df[factor_lbl] = major_return_df["instru_idx"] / major_return_df["instru_idx"].shift(
             mtm_window) - 1
         if tag_adj:
@@ -58,7 +62,7 @@ def cal_fac_exp_mtm_mp(proc_num: int,
                        mtm_windows: list[int],
                        instruments_universe: list[str],
                        database_structure: dict,
-                       major_return_dir: str,
+                       by_instrument_dir: str,
                        factors_exposure_dir: str,
                        ):
     t0 = dt.datetime.now()
@@ -68,7 +72,7 @@ def cal_fac_exp_mtm_mp(proc_num: int,
                          args=(run_mode, bgn_date, stp_date, p_window, tag_adj,
                                instruments_universe,
                                database_structure,
-                               major_return_dir,
+                               by_instrument_dir,
                                factors_exposure_dir),
                          error_callback=error_handler,
                          )
