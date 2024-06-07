@@ -5,7 +5,7 @@ def parse_args():
     args_parser = argparse.ArgumentParser(description="Entry point of this project")
     args_parser.add_argument(
         "--switch", type=str,
-        choices=("preprocess", "test_returns", "factors_exposure", "fema", "ic", "icsum"),
+        choices=("preprocess", "test_returns", "factors_exposure", "fema", "ic", "icsum", "gp", "gpsum", "gpcor"),
         help="use this to decide which parts to run, available options",
     )
     args_parser.add_argument(
@@ -375,65 +375,55 @@ if __name__ == "__main__":
             tests_result_summary_dir=research_ic_tests_summary_dir,
             days_per_year=252,
         )
-    # elif switch in ["GP"]:
-    #     cal_gp_tests_mp(
-    #         proc_num=5,
-    #         factors_ma=factors_ma, universe=instruments_universe,
-    #         run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #         tests_result_dir=research_gp_tests_dir,
-    #         factors_exposure_dir=research_factors_exposure_dir,
-    #         test_returns_dir=research_test_returns_dir,
-    #         database_structure=database_structure,
-    #         calendar_path=calendar_path)
-    # elif switch in ["GPSUM"]:
-    #     cal_gp_tests_summary_mp(
-    #         proc_num=proc_num,
-    #         factors_ma=factors_ma, sharpe_ratio_threshold=1.0,
-    #         bgn_date=bgn_date, stp_date=stp_date,
-    #         database_structure=database_structure,
-    #         tests_result_dir=research_gp_tests_dir,
-    #         tests_result_summary_dir=research_gp_tests_summary_dir)
-    # elif switch in ["GPCOR"]:
-    #     cal_gp_tests_corr(
-    #         # factors_ma=[
-    #         #     "EXR042D3-M005",
-    #         #     "CTP063T10-M005",
-    #         #     "AMPH063T02-M005",
-    #         #     "SKEW126-M005",
-    #         #     "BASIS_D021-M005",
-    #         #     "BETA_D063-M005",
-    #         #     "CTR126T01-M005",
-    #         #     "TS_D252-M005",
-    #         #     "TWCV021-M005",
-    #         # ],
-    #         # factors_ma=[
-    #         #     "CTP063T10-M010",
-    #         #     "EXR042D3-M010",
-    #         #     "CSR252T05-M010",
-    #         #     "SMTR005T02-M010",
-    #         #     "AMPH063T02-M010",
-    #         #     "BASIS_D021-M010",
-    #         #     "MTM010ADJ-M010",
-    #         #     "BETA_D063-M010",
-    #         #     "BASIS-M010",
-    #         #     "TS_D252-M010",
-    #         #     "TWCV021-M010",
-    #         # ],
-    #         factors_ma=[
-    #             "EXR042D3-M010",
-    #             "CTP063T10-M010",
-    #             "AMPH063T02-M010",
-    #             "SKEW126-M010",
-    #             "BASIS_D021-M010",
-    #             "BETA_D063-M010",
-    #             "CTR126T01-M010",
-    #             "TS_D252-M010",
-    #             "TWCV021-M010",
-    #         ],
-    #         bgn_date=bgn_date, stp_date=stp_date,
-    #         database_structure=database_structure,
-    #         tests_result_dir=research_gp_tests_dir,
-    #         tests_result_summary_dir=research_gp_tests_summary_dir)
+    elif switch in ["GP"]:
+        from project_setup import research_gp_tests_dir, research_test_returns_dir
+        from project_config import factors_ma
+        from tests.gp_tests import cal_gp_tests_mp
+
+        cal_gp_tests_mp(
+            proc_num=proc_num,
+            factors_ma=factors_ma, universe=instruments_universe,
+            run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+            tests_result_dir=research_gp_tests_dir,
+            factors_exposure_dir=research_factors_exposure_dir,
+            test_returns_dir=research_test_returns_dir,
+            database_structure=database_structure,
+            calendar_path=calendar_path,
+        )
+    elif switch in ["GPSUM"]:
+        from project_setup import research_gp_tests_dir, research_gp_tests_summary_dir
+        from project_config import factors_ma
+        from tests.gp_tests_summary import cal_gp_tests_summary_mp
+
+        cal_gp_tests_summary_mp(
+            proc_num=proc_num,
+            factors_ma=factors_ma, sharpe_ratio_threshold=1.0,
+            bgn_date=bgn_date, stp_date=stp_date,
+            database_structure=database_structure,
+            tests_result_dir=research_gp_tests_dir,
+            tests_result_summary_dir=research_gp_tests_summary_dir,
+        )
+    elif switch in ["GPCOR"]:
+        from project_setup import research_gp_tests_dir, research_gp_tests_summary_dir
+        from tests.gp_tests_corr import cal_gp_tests_corr
+
+        cal_gp_tests_corr(
+            factors_ma=[
+                "EXR042D3-M010",
+                "CTP063T10-M010",
+                "AMPH063T02-M010",
+                "SKEW126-M010",
+                "BASIS_D021-M010",
+                "BETA_D063-M010",
+                "CTR126T01-M010",
+                "TS_D252-M010",
+                "TWCV021-M010",
+            ],
+            bgn_date=bgn_date, stp_date=stp_date,
+            database_structure=database_structure,
+            tests_result_dir=research_gp_tests_dir,
+            tests_result_summary_dir=research_gp_tests_summary_dir,
+        )
     # elif switch in ["SIG"]:
     #     cal_signals_mp(
     #         proc_num=5,

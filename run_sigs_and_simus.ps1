@@ -25,6 +25,9 @@ python main.py --switch factors_exposure --mode o --bgn $bgn_date --stp $stp_dat
 python main.py --switch fema --mode o --bgn $bgn_date_ma   --stp $stp_date
 python main.py --switch ic   --mode o --bgn $bgn_date_test --stp $stp_date
 python main.py --switch icsum         --bgn $bgn_date_test --stp $stp_date
+python main.py --switch gp   --mode o --bgn $bgn_date_test --stp $stp_date
+python main.py --switch gpsum         --bgn $bgn_date_test --stp $stp_date
+python main.py --switch gpcor         --bgn $bgn_date_test --stp $stp_date
 
 python main.py -mode o -bgn $bgn_date_ma -stp $stp_date -w sig
 python main.py -mode o -bgn $bgn_date_test -stp $stp_date -w simu

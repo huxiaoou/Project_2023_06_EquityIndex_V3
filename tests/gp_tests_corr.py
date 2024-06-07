@@ -39,5 +39,5 @@ def cal_gp_tests_corr(
     for lbd in [0.1, 1, 10, 100, 1000, 50000]:
         w, _ = minimize_utility(t_mu=mu.values, t_sigma=sgm.values, t_lbd=lbd)
         opt_res[lbd] = pd.Series(data=w, index=mu.index)
-    print(df := pd.DataFrame.from_dict(opt_res))
+    print(pd.DataFrame.from_dict(opt_res))
     return 0
