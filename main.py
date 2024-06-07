@@ -260,16 +260,18 @@ if __name__ == "__main__":
                 intermediary_dir=research_intermediary_dir,
                 calendar_path=calendar_path,
             )
-    #     elif factor == "rng":
-    #         cal_fac_exp_rng_mp(
-    #             proc_num=proc_num,
-    #             run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
-    #             rng_windows=factors_args["rng_windows"],
-    #             instruments_universe=instruments_universe,
-    #             database_structure=database_structure,
-    #             major_return_dir=major_return_dir,
-    #             factors_exposure_dir=research_factors_exposure_dir
-    #         )
+        elif factor == "rng":
+            from algs.factor_exposure_rng import cal_fac_exp_rng_mp
+
+            cal_fac_exp_rng_mp(
+                proc_num=proc_num,
+                run_mode=run_mode, bgn_date=bgn_date, stp_date=stp_date,
+                rng_windows=factors_args["rng_windows"],
+                instruments_universe=instruments_universe,
+                database_structure=database_structure,
+                by_instrument_dir=futures_by_instru_dir,
+                factors_exposure_dir=research_factors_exposure_dir
+            )
     #     elif factor == "sgm":
     #         cal_fac_exp_sgm_mp(
     #             proc_num=proc_num,
