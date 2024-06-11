@@ -412,18 +412,20 @@ if __name__ == "__main__":
         from project_setup import research_gp_tests_dir, research_gp_tests_summary_dir
         from tests.gp_tests_corr import cal_gp_tests_corr
 
+        test_factors_ma = [
+            "EXR042D3-M010",
+            "CTP063T10-M010",
+            "AMPH063T02-M010",
+            "SKEW126-M010",
+            "BASIS_D021-M010",
+            "BETA_D063-M010",
+            "CTR126T01-M010",
+            "TS_D252-M010",
+            "TWCV021-M010",
+        ]
+
         cal_gp_tests_corr(
-            factors_ma=[
-                "EXR042D3-M010",
-                "CTP063T10-M010",
-                "AMPH063T02-M010",
-                "SKEW126-M010",
-                "BASIS_D021-M010",
-                "BETA_D063-M010",
-                "CTR126T01-M010",
-                "TS_D252-M010",
-                "TWCV021-M010",
-            ],
+            factors_ma=test_factors_ma,
             bgn_date=bgn_date, stp_date=stp_date,
             database_structure=database_structure,
             tests_result_dir=research_gp_tests_dir,

@@ -213,6 +213,23 @@ class CSignalDynamicWeight(CSignal):
                  gp_tests_dir: str,
                  database_structure: dict[str, CLib1Tab1],
                  calendar_path: str):
+        """
+
+        :param sid:
+        :param universe:
+        :param mov_ave_win:
+        :param min_model_days: set this large enough to use a fixed default weights
+        :param factors_struct:
+        :param run_mode:
+        :param bgn_date:
+        :param stp_date:
+        :param trn_win:
+        :param lbd:
+        :param signals_dir:
+        :param gp_tests_dir:
+        :param database_structure:
+        :param calendar_path:
+        """
         factors, fix_weights = zip(*factors_struct)
         ws = pd.Series(data=fix_weights, index=factors)
         self.m_default_weights = ws / ws.abs().sum()

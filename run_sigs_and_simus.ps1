@@ -27,8 +27,8 @@ python main.py --switch ic   --mode o --bgn $bgn_date_test --stp $stp_date
 python main.py --switch icsum         --bgn $bgn_date_test --stp $stp_date
 python main.py --switch gp   --mode o --bgn $bgn_date_test --stp $stp_date
 python main.py --switch gpsum         --bgn $bgn_date_test --stp $stp_date
-python main.py --switch gpcor         --bgn $bgn_date_test --stp $stp_date
 
+python main.py --switch gpcor         --bgn $bgn_date_test --stp $stp_date
 python main.py --switch sig  --mode o --bgn $bgn_date_ma   --stp $stp_date
 python main.py --switch simu --mode o --bgn $bgn_date_test --stp $stp_date
 python main.py --switch simusum
